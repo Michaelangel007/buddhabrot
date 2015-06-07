@@ -27,7 +27,7 @@ a) The default C/C++ compiler is llvm not gcc; llvm does not (yet) support OpenM
 
    usr/local/bin/g++ --version
 
-b) Compiling with gcc you will get this error message:
+b) Compiling with gcc you may get this error message:
 
     Undefined symbols for architecture x86_64:
       "_gomp_thread_attr", referenced from:
@@ -75,11 +75,6 @@ Also see:
 // BEGIN OMP
     #include <omp.h>
 // END OMP
-
-#ifdef __APPLE__
-    #include <pthreads.h>
-    pthread_attr_t gomp_thread_attr;
-#endif
 
 // Macros
     #define VERBOSE if(gbVerbose)

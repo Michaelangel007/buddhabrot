@@ -34,7 +34,9 @@ else
   ifeq ($(OS),Darwin) # OSX
     $(info "OS: OSX detected...")
     CFLAGS += -DOS_OSX
-    CC := /usr/bin/g++
+    # LLVM resed in /usr/bin/g++
+    # custom GCC in /usr/local/bin/g++
+    CC := /usr/local/bin/g++
   endif
 endif
 
