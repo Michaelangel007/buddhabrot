@@ -17,6 +17,9 @@
     #include <math.h>
     #include <stdint.h> // uint16_t uint32_t
     #include <string.h> // memset()
+// BEGIN OMP
+    #include <omp.h>
+// END OMP
 
 // Macros
     #define VERBOSE if(gbVerbose)
@@ -26,9 +29,9 @@
 // Globals
 
     // Input parameters
-    double    gnWorldMinX        = -2.102613;
+    double    gnWorldMinX        = -2.102613; // WorldW = MaxX-MinX = 3.303226
     double    gnWorldMaxX        =  1.200613;
-    double    gnWorldMinY        = -1.237710;
+    double    gnWorldMinY        = -1.237710; // WorldH = MaxY-MinY = 2.47742 
     double    gnWorldMaxY        =  1.239710;
 
     int       gnMaxDepth         = 1000; // max number of iterations == # of pixels to plot per complex number
@@ -54,19 +57,154 @@
     uint16_t *gpGreyscaleTexels  = NULL; // [ height ][ width ] 16-bit greyscale
     uint8_t  *gpChromaticTexels  = NULL; // [ height ][ width ] 24-bit RGB
 
+// BEGIN OMP
+    // The single 16-bit brightness buffer is a shared resource
+    // We would incur a major performance penalty via atomic access
+    // to keep it in sync amongst the various threads
+    // Instead, we give each thread its own indepent copy
+    // Afterwards, we will merge (add) all copies back into a single brightness buffer
+    int       gnThreads = 1;
+    uint16_t *gaThreadsTexels[ 16 ]; // Max 16-cores
+// END OMP
+
+
+// Timer___________________________________________________________________________ 
+
+#ifdef _WIN32 // MSC_VER
+    #define WIN32_LEAN_AND_MEAN
+    #define NOMINMAX
+    #include <Windows.h> // Windows.h -> WinDef.h defines min() max()
+
+    /*
+        typedef uint16_t WORD ;
+        typedef uint32_t DWORD;
+
+        typedef struct _FILETIME {
+            DWORD dwLowDateTime;
+            DWORD dwHighDateTime;
+        } FILETIME;
+
+        typedef struct _SYSTEMTIME {
+              WORD wYear;
+              WORD wMonth;
+              WORD wDayOfWeek;
+              WORD wDay;
+              WORD wHour;
+              WORD wMinute;
+              WORD wSecond;
+              WORD wMilliseconds;
+        } SYSTEMTIME, *PSYSTEMTIME;
+    */
+
+    // WTF!?!? Exists in winsock2.h
+    typedef struct timeval {
+        long tv_sec;
+        long tv_usec;
+    } timeval;
+
+    // *sigh* no gettimeofday on Win32/Win64
+    int gettimeofday(struct timeval * tp, struct timezone * tzp)
+    {
+        // FILETIME Jan 1 1970 00:00:00
+        // Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
+        static const uint64_t EPOCH = ((uint64_t) 116444736000000000ULL); 
+
+        SYSTEMTIME  nSystemTime;
+        FILETIME    nFileTime;
+        uint64_t    nTime;
+
+        GetSystemTime( &nSystemTime );
+        SystemTimeToFileTime( &nSystemTime, &nFileTime );
+        nTime =  ((uint64_t)nFileTime.dwLowDateTime )      ;
+        nTime += ((uint64_t)nFileTime.dwHighDateTime) << 32;
+
+        tp->tv_sec  = (long) ((nTime - EPOCH) / 10000000L);
+        tp->tv_usec = (long) (nSystemTime.wMilliseconds * 1000);
+        return 0;
+    }
+#else
+    #include <sys/time.h>
+#endif // _WIN32
+
+    struct DataRate
+    {
+        char     prefix ;
+        uint64_t samples;
+        uint64_t per_sec;
+    };
+
+    class Timer
+    {
+        timeval start, end; // Windows: winsock2.h  Unix: sys/time.h 
+    public:
+        double   elapsed; // total seconds
+        uint32_t mins;
+        uint32_t secs;
+        DataRate throughput;
+
+        void Start()
+        {
+            gettimeofday( &start, NULL );
+        }
+
+        void Stop()
+        {
+            gettimeofday( &end, NULL );
+            elapsed = (end.tv_sec - start.tv_sec);
+
+            mins = (uint32_t)elapsed / 60;
+            secs = (uint32_t)elapsed - (mins*60);
+        }
+
+        // size is number of bytes in a file, or number of iterations that you want to benchmark
+        void Throughput( uint64_t size )
+        {
+            const int MAX_PREFIX = 4;
+            DataRate datarate[ MAX_PREFIX ] = {
+                {' ',0,0}, {'K',0,0}, {'M',0,0}, {'G',0,0} // 1; 1,000; 1,000,000; 1,000,000,000
+            };
+
+            if( !elapsed )
+                return;
+
+            int best = 0;
+            for( int units = 0; units < MAX_PREFIX; units++ )
+            {
+                    datarate[ units ].samples = size >> (10*units);
+                    datarate[ units ].per_sec = (uint64_t) (datarate[units].samples / elapsed);
+                if (datarate[ units ].per_sec > 0)
+                    best = units;
+            }
+            throughput = datarate[ best ];
+        }
+    };
+
+
+// Implementation _________________________________________________________________ 
 
 // ========================================================================
 void AllocImageMemory( const int width, const int height )
 {
-    const size_t area           = width * height;
+    const size_t nArea           = width * height;
 
-    const size_t greyscaleBytes = area  * sizeof( uint16_t );
-    gpGreyscaleTexels = (uint16_t*) malloc( greyscaleBytes );   // 1x 16-bit channel: K
-    memset( gpGreyscaleTexels, 0, greyscaleBytes );
+    const size_t nGreyscaleBytes = nArea  * sizeof( uint16_t );
+    gpGreyscaleTexels = (uint16_t*) malloc( nGreyscaleBytes );   // 1x 16-bit channel: K
+    memset( gpGreyscaleTexels, 0, nGreyscaleBytes );
 
-    const size_t chromaticBytes  = area * 3 * sizeof( uint8_t ); // 3x 8-bit channels: R,G,B
+    const size_t chromaticBytes  = nArea * 3 * sizeof( uint8_t ); // 3x 8-bit channels: R,G,B
     gpChromaticTexels = (uint8_t*) malloc( chromaticBytes );
     memset( gpChromaticTexels, 0, chromaticBytes );
+
+// BEGIN OMP
+    gnThreads = omp_get_num_procs();
+    printf( "Detected: %d cores\n", gnThreads );
+
+    for( int iThread = 0; iThread < gnThreads; iThread++ )
+    {
+                gaThreadsTexels[ iThread ] = new uint16_t [ nGreyscaleBytes ];
+        memset( gaThreadsTexels[ iThread ], 0,              nGreyscaleBytes );
+    }
+// END OMP
 }
 
 
@@ -235,19 +373,19 @@ RAW_WriteGreyscale16bit( const char *filename, const uint16_t *texels, const int
 inline
 void plot( double wx, double wy, double sx, double sy, uint16_t *texels, const int width, const int height, const int maxdepth )
 {
-    double  r = 0., i = 0.; // current Complex< real, imaginary >
-    double  r2    , i2    ; // next    Complex< real, imaginary >
+    double  r = 0., i = 0.; // Zn   current Complex< real, imaginary >
+    double  s    , j      ; // Zn+1 next    Complex< real, imaginary >
     int     u     , v     ; // texel coords
 
     for( int depth = 0; depth < maxdepth; depth++ )
     {
-        r2 = ((r * r) - (i * i)) + wx;
-        i2 = (2 * r * i)         + wy;
+        s = (r*r - i*i) + wx;
+        j = (2*r*i)     + wy;
 
-        r = r2;
-        i = i2;
+        r = s;
+        i = j;
 
-        if( (r * r) + (i * i) > 4.0 ) // escapes to infinity, don't render
+        if ((r*r + i*i) > 4.0 ) // escapes to infinity, don't render
             return;
 
         u = (int) ((r - gnWorldMinX) * sx); // texel x
@@ -259,45 +397,52 @@ void plot( double wx, double wy, double sx, double sy, uint16_t *texels, const i
 }
 
 
+// @return Number of input scaled pixels (Not uber total of all pixels processed)
 // ========================================================================
-void Buddhabrot()
+int Buddhabrot()
 {
     if( gnScale < 0)
         gnScale = 1;
 
-    int nCol = gnWidth  * gnScale;
-    int nRow = gnHeight * gnScale;
+    const int nCol = gnWidth  * gnScale ; // scaled width
+    const int nRow = gnHeight * gnScale ; // scaled height
 
-    double nWorldW = gnWorldMaxX - gnWorldMinX;
-    double nWorldH = gnWorldMaxY - gnWorldMinY;
+    /* */ int iCel = 0                  ; // Progress status for percent compelete
+    const int nCel = nCol     * nRow    ; // scaled width  * scaled height;
+
+    const double nWorldW = gnWorldMaxX - gnWorldMinX;
+    const double nWorldH = gnWorldMaxY - gnWorldMinY;
 
     // Map Source (world space) to Pixels (image space)
-    double world_2_image_x = (double)(gnWidth -1) / nWorldW;
-    double world_2_image_y = (double)(gnHeight-1) / nWorldH;
+    const double nWorld2ImageX = (double)(gnWidth  - 1.) / nWorldW;
+    const double nWorld2ImageY = (double)(gnHeight - 1.) / nWorldH;
 
-    double dx = nWorldW / (nCol - 1.0);
-    double dy = nWorldH / (nRow - 1.0);
+    const double dx = nWorldW / (nCol - 1.0);
+    const double dy = nWorldH / (nRow - 1.0);
 
-    int iCol = 0;    // Progress status for percent compelete
-    int iRow = 0;
+#if 0
+    // Original 2D
+    int       iTid = 0;
+    uint16_t *pTex = 0;
 
-    for( double x = gnWorldMinX; x < gnWorldMaxX; iCol++, x += dx )
+    for( double x = gnWorldMinX; x < gnWorldMaxX; x += dx )
     {
-        iRow = 0;
-        for( double y = gnWorldMinY; y < gnWorldMaxY; iRow++, y += dy )
+        for( double y = gnWorldMinY; y < gnWorldMaxY; y += dy )
         {
-            double r = 0., i = 0.;
+            iCel++;
+
+            double r = 0., i = 0., s, j;
             for (int depth = 0; depth < gnMaxDepth; depth++)
             {
-                double r2 = ((r*r) - (i*i)) + x; // Zn+1 = Zn^2 + C<x,y>
-                double i2 = (2*r*i)         + y;
+                s = ((r*r) - (i*i)) + x; // Zn+1 = Zn^2 + C<x,y>
+                j = (2*r*i)         + y;
 
-                r = r2;
-                i = i2;
+                r = s;
+                i = j;
 
-                if ((r*r) + (i*i) > 4.0) // escapes to infinity so trace path
+                if( (r*r + i*i) > 4.0) // escapes to infinity so trace path
                 {
-                    plot( x, y, world_2_image_x, world_2_image_y, gpGreyscaleTexels, gnWidth, gnHeight, gnMaxDepth );
+                    plot( x, y, nWorld2ImageX, nWorld2ImageY, gpGreyscaleTexels, gnWidth, gnHeight, gnMaxDepth );
                     break;
                 }
             }
@@ -305,14 +450,130 @@ void Buddhabrot()
 
         VERBOSE
         {
-            double percent = (100.0 * iCol) / nCol;
+            double percent = (100.0  * iCel) / nCel;
             for( int i = 0; i < 32; i++ )
                 printf( "%c", 8 ); // ASCII backspace
 
-            printf( "%6.2f%% = %d / %d", percent, iCol, nCol );
+            printf( "%6.2f%% = %d / %d", percent, iCel, nCel ); // iCol, nCol );
             fflush( stdout );
         }
     }
+#else
+    // Note:
+    //    omp parallel     -- spawn a group of threads, for() excuted for each thread
+    //    omp parallel for -- divie loop amongst the threads
+
+#pragma omp parallel for
+    for( int iCol = 0; iCol < nCol; iCol++ )
+    {
+// BEGIN OMP
+        double    x    = gnWorldMinX + (dx*iCol);
+        int       iTid = omp_get_thread_num(); // Get Thread Index: 0 .. nCores-1
+        uint16_t* pTex = gaThreadsTexels[ iTid ];
+// END OMP
+
+        for( int iRow = 0; iRow < nRow; iRow++ )
+        {
+            double y = gnWorldMinY + (dy*iRow);
+
+// BEGIN OMP
+#pragma omp atomic 
+            iCel++;
+// END OMP
+
+            double r = 0., i = 0., s, j;
+            for (int depth = 0; depth < gnMaxDepth; depth++)
+            {
+                s = ((r*r) - (i*i)) + x; // Zn+1 = Zn^2 + C<x,y>
+                j = (2*r*i)         + y;
+
+                r = s;
+                i = j;
+
+                if( (r*r + i*i) > 4.0) // escapes to infinity so trace path
+                {
+                    plot( x, y, nWorld2ImageX, nWorld2ImageY, pTex, gnWidth, gnHeight, gnMaxDepth );
+                    break;
+                }
+            }
+        }
+// BEGIN OMP
+        if( iTid > -1 ) // All threads can print but need to guard with a critical section
+// END OMP
+        VERBOSE
+        {
+            double percent = (100.0  * iCel) / nCel;
+#pragma omp critical
+            {
+                for( int i = 0; i < 40; i++ )
+                    printf( "%c", 8 ); // ASCII backspace
+
+                printf( "%6.2f%% = %d / %d", percent, iCel, nCel ); // iCol, nCol );
+                fflush( stdout );
+            }
+        }
+    }
+#endif
+
+#if 0
+    // 1. Scatter
+
+    // Linearize to 1D
+// #pragma OMP parallel for
+    for( int iCel = 0; iCel < nCel; iCel++ )
+    {
+        const int       iTid = omp_get_thread_num(); // Get Thread Index: 0 .. nCores-1
+        /* */ uint16_t* pTex = gapCoreTexels[ iTid ];
+
+        const int       iCol = iCel / nCol;
+        const int       iRow = iCel % nCol;
+
+        /* */ double    r = 0., i = 0., s, j;
+        const double    x = gnWorldMinX + (iCol * dx);
+        const double    y = gnWorldMinY + (iRow * dy);
+
+            for (int depth = 0; depth < gnMaxDepth; depth++)
+            {
+                s = (r*r - i*i) + x; // Zn+1 = Zn^2 + C<x,y>
+                j = (2*r*i)     + y;
+
+                r = s;
+                i = j;
+
+                if  ((r*r + i*i) > 4.0) // escapes to infinity so trace path
+                {
+                    plot( x, y, nWorld2ImageX, nWorld2ImageY, pTex, gnWidth, gnHeight, gnMaxDepth );
+                    break;
+                }
+            }
+
+        if( iTid == 0 )
+        VERBOSE
+        {
+            double percent = (100.0  * iCel) / nCel;
+            for( int i = 0; i < 32; i++ )
+                printf( "%c", 8 ); // ASCII backspace
+
+            printf( "%6.2f%% = %d / %d", percent, iCel, nCel ); // iCol, nCol );
+            fflush( stdout );
+        }
+    }
+#endif
+
+// BEGIN OMP
+    // 2. Gather
+    const int nPix = gnWidth  * gnHeight; // Normal area
+    for( int iThread = 0; iThread < gnThreads; iThread++ )
+    {
+        const uint16_t *pSrc = gaThreadsTexels[ iThread ];
+        /* */ uint16_t *pDst = gpGreyscaleTexels;
+
+        for( int iPix = 0; iPix < nPix; iPix++ )
+            *pDst++ += *pSrc++;
+    }
+// END OMP
+
+    return nCel;
 }
 
 
@@ -376,23 +637,35 @@ int main( int nArg, char * aArg[] )
 
     AllocImageMemory( gnWidth, gnHeight );
 
-    // timer.begin();
-        Buddhabrot();
-    // timer.end();
-    // Calculate throughput in pixels/s
+    Timer stopwatch;
+    stopwatch.Start();
+        int nCells = Buddhabrot();
+    stopwatch.Stop();
+    stopwatch.Throughput( nCells ); // Calculate throughput in pixels/s
+    printf( "%2d %cpix/s (%d pixels, %.f seconds = %d:%d)\n"
+        , (int)stopwatch.throughput.per_sec, stopwatch.throughput.prefix
+        , nCells
+        , stopwatch.elapsed
+        , stopwatch.mins, stopwatch.secs
+    );
 
     VERBOSE printf( "\n" );
 
     if( gbSaveRawGreyscale )
     {
         char     filenameRAW[ 256 ];
-        sprintf( filenameRAW, "buddhabrot_%dx%d_%d_%dx.u16.raw", gnWidth, gnHeight, gnMaxDepth, gnScale );
+        sprintf( filenameRAW, "omp_raw_buddhabrot_%dx%d_%d_%dx.u16.data", gnWidth, gnHeight, gnMaxDepth, gnScale );
+
         RAW_WriteGreyscale16bit( filenameRAW, gpGreyscaleTexels, gnWidth, gnHeight );
         printf( "Saved: %s\n", filenameRAW );
     }
 
     char     filenameBMP[256];
-    sprintf( filenameBMP, "buddhabrot_%dx%d_depth_%d_colorscaling_%d_scale_%dx.bmp", gnWidth, gnHeight, gnMaxDepth, (int)gbAutoBrightness, gnScale );
+#if DEBUG
+    sprintf( filenameBMP, "omp_buddhabrot_%dx%d_depth_%d_colorscaling_%d_scale_%dx.bmp", gnWidth, gnHeight, gnMaxDepth, (int)gbAutoBrightness, gnScale );
+#else
+    sprintf( filenameBMP, "omp_buddhabrot_%dx%d@%d.bmp", gnWidth, gnHeight, gnMaxDepth );
+#endif
 
     Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
     Image_Greyscale16bitToColor24bit( gpGreyscaleTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
