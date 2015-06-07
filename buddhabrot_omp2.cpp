@@ -510,9 +510,13 @@ int Buddhabrot()
                 }
             }
 
+// BEGIN OMP
         if( iTid == 0 )
+// END OMP
         VERBOSE
         {
+            // We no longer need a critical section
+            // since we only allow thread 0 to print
             {
                 const double percent = (100.0  * iCel) / nCel;
 
@@ -607,7 +611,7 @@ int main( int nArg, char * aArg[] )
         int nCells = Buddhabrot();
     stopwatch.Stop();
     stopwatch.Throughput( nCells ); // Calculate throughput in pixels/s
-    printf( "%d %cpix/s (%d pixels, %.f seconds = %d:%d)\n"
+    printf( "%d %cpix/s (%d pixels, %.f seconds = %d:%02d)\n"
         , (int)stopwatch.throughput.per_sec, stopwatch.throughput.prefix
         , nCells
         , stopwatch.elapsed
@@ -619,7 +623,7 @@ int main( int nArg, char * aArg[] )
     if( gbSaveRawGreyscale )
     {
         char     filenameRAW[ 256 ];
-        sprintf( filenameRAW, "omp2_buddhabrot_%dx%d_%d_%dx.u16.data", gnWidth, gnHeight, gnMaxDepth, gnScale );
+        sprintf( filenameRAW, "raw_omp2_buddhabrot_%dx%d_%d_%dx.u16.data", gnWidth, gnHeight, gnMaxDepth, gnScale );
 
         RAW_WriteGreyscale16bit( filenameRAW, gpGreyscaleTexels, gnWidth, gnHeight );
         printf( "Saved: %s\n", filenameRAW );
@@ -629,7 +633,7 @@ int main( int nArg, char * aArg[] )
 #if DEBUG
     sprintf( filenameBMP, "omp2_buddhabrot_%dx%d_depth_%d_colorscaling_%d_scale_%dx.bmp", gnWidth, gnHeight, gnMaxDepth, (int)gbAutoBrightness, gnScale );
 #else
-    sprintf( filenameBMP, "omp2_buddhabrot_%dx%d@%d.bmp", gnWidth, gnHeight, gnMaxDepth );
+    sprintf( filenameBMP, "omp2_buddhabrot_%dx%d_%d.bmp", gnWidth, gnHeight, gnMaxDepth );
 #endif
 
     Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness

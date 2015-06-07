@@ -409,8 +409,8 @@ int Buddhabrot()
             double r = 0., i = 0., s, j;
             for (int depth = 0; depth < gnMaxDepth; depth++)
             {
-                s = ((r*r) - (i*i)) + x; // Zn+1 = Zn^2 + C<x,y>
-                j = (2*r*i)         + y;
+                s = (r*r - i*i) + x; // Zn+1 = Zn^2 + C<x,y>
+                j = (2*r*i)     + y;
 
                 r = s;
                 i = j;
@@ -443,7 +443,7 @@ int Buddhabrot()
 int Usage()
 {
     printf(
-"Buddhabrot v1.8 by Michael Pohoreski\n"
+"Buddhabrot (Single Core) v1.8 by Michael Pohoreski\n"
 "Usage: [width height depth]\n"
 "\n"
 "-?   Dipslay usage help\n"
@@ -504,7 +504,7 @@ int main( int nArg, char * aArg[] )
         int nCells = Buddhabrot();
     stopwatch.Stop();
     stopwatch.Throughput( nCells ); // Calculate throughput in pixels/s
-    printf( "%d %cpix/s (%d pixels, %.f seconds = %d:%d)\n"
+    printf( "%d %cpix/s (%d pixels, %.f seconds = %d:%02d)\n"
         , (int)stopwatch.throughput.per_sec, stopwatch.throughput.prefix
         , nCells
         , stopwatch.elapsed
@@ -526,7 +526,7 @@ int main( int nArg, char * aArg[] )
 #if DEBUG
     sprintf( filenameBMP, "cpu1_buddhabrot_%dx%d_depth_%d_colorscaling_%d_scale_%dx.bmp", gnWidth, gnHeight, gnMaxDepth, (int)gbAutoBrightness, gnScale );
 #else
-    sprintf( filenameBMP, "cpu1_buddhabrot_%dx%d_d%d.bmp", gnWidth, gnHeight, gnMaxDepth );
+    sprintf( filenameBMP, "cpu1_buddhabrot_%dx%d_%d.bmp", gnWidth, gnHeight, gnMaxDepth );
 #endif
 
     Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
