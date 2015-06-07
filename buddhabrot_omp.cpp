@@ -1,14 +1,69 @@
-/*  Nebulabrot / Buddhabrot generator.
+/*  Buddhabrot generator
+    https://github.com/Michaelangel007/buddhabrot
     http://en.wikipedia.org/wiki/User_talk:Michael.Pohoreski/Buddhabrot.cpp
 
     Optimized and cleaned up version by Michael Pohoreski
-    Original version by Evercat
+    Based on the original version by Evercat
 
         g++ -Wall -O2 buddhabrot.cpp -o buddhabrot
-        buddhabrot 20000 4000 3000
+        ./bin/buddhabrot 3000 4000 20000
 
    Released under the GNU Free Documentation License
    or the GNU Public License, whichever you prefer.
+
+= OMP =
+
+* OpenMP On OSX (10.8, 10.9) 
+
+There are 2 initial problems compiling with OpenMP under OSX.
+
+a) The default C/C++ compiler is llvm not gcc; llvm does not (yet) support OpenMP.
+   The solution is to install and use gcc.
+
+   Install gcc 4.7 (or greater) from macports.org
+
+    sudo port install gcc47
+    sudo port select gcc mp-gcc477
+
+   usr/local/bin/g++ --version
+
+b) Compiling with gcc you will get this error message:
+
+    Undefined symbols for architecture x86_64:
+      "_gomp_thread_attr", referenced from:
+          _initialize_env in libgomp.a(env.o)
+    ld: symbol(s) not found for architecture x86_64
+
+There are 2 solutions:
+
+1) Add the global thread symbol for gomp (Gnu OpenMP)
+    #include <pthread.h> // required on OSX 10.8
+    pthread_attr_t gomp_thread_attr;
+
+or
+
+2) Install gcc 4.7 (or greater) from macports.org
+
+    sudo port install gcc47
+    sudo port select gcc mp-gcc477
+    hash gcc
+
+To find out where OpenMP's header is:
+  cd /
+  sufo find . -name omp.h
+
+Default on XCode 4.6 + Command Line Tools
+    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin10/4.2.1/include/omp.h
+    /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
+    /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
+    /Applications/Xcode.app/Contents/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
+
+If you have installed gcc:
+    /user/local/lib/gcc/x86_64-apple-darwin14.0.0/4.9.2/include/omp.h
+    /user/local/lib/gcc/x86_64-apple-darwin14.0.0/5.0.0/include/omp.h
+
+Also see:
+
 */
 
 // Includes
@@ -20,6 +75,11 @@
 // BEGIN OMP
     #include <omp.h>
 // END OMP
+
+#ifdef __APPLE__
+    #include <pthreads.h>
+    pthread_attr_t gomp_thread_attr;
+#endif
 
 // Macros
     #define VERBOSE if(gbVerbose)
@@ -96,7 +156,7 @@
         } SYSTEMTIME, *PSYSTEMTIME;
     */
 
-    // WTF!?!? Exists in winsock2.h
+    // *sigh* Microsoft has this in winsock2.h because they are too lazy to put it in the standard location ... !?!?
     typedef struct timeval {
         long tv_sec;
         long tv_usec;
@@ -201,8 +261,8 @@ void AllocImageMemory( const int width, const int height )
 
     for( int iThread = 0; iThread < gnThreads; iThread++ )
     {
-                gaThreadsTexels[ iThread ] = new uint16_t [ nGreyscaleBytes ];
-        memset( gaThreadsTexels[ iThread ], 0,              nGreyscaleBytes );
+                gaThreadsTexels[ iThread ] = (uint16_t*) malloc( nGreyscaleBytes );
+        memset( gaThreadsTexels[ iThread ], 0,                   nGreyscaleBytes );
     }
 // END OMP
 }
@@ -331,7 +391,7 @@ Image_Greyscale16bitToColor24bit(
 {
     const int       nLen = width * height;
     const uint16_t *pSrc = greyscale;
-          uint8_t  *pDst = chromatic_;
+    /* */ uint8_t  *pDst = chromatic_;
 
     for( int iPix = 0; iPix < nLen; iPix++ )
     {
@@ -407,7 +467,6 @@ int Buddhabrot()
     const int nCol = gnWidth  * gnScale ; // scaled width
     const int nRow = gnHeight * gnScale ; // scaled height
 
-    /* */ int iCel = 0                  ; // Progress status for percent compelete
     const int nCel = nCol     * nRow    ; // scaled width  * scaled height;
 
     const double nWorldW = gnWorldMaxX - gnWorldMinX;
@@ -420,118 +479,31 @@ int Buddhabrot()
     const double dx = nWorldW / (nCol - 1.0);
     const double dy = nWorldH / (nRow - 1.0);
 
-#if 0
-    // Original 2D
-    int       iTid = 0;
-    uint16_t *pTex = 0;
+    // 1. Scatter
 
-    for( double x = gnWorldMinX; x < gnWorldMaxX; x += dx )
-    {
-        for( double y = gnWorldMinY; y < gnWorldMaxY; y += dy )
-        {
-            iCel++;
-
-            double r = 0., i = 0., s, j;
-            for (int depth = 0; depth < gnMaxDepth; depth++)
-            {
-                s = ((r*r) - (i*i)) + x; // Zn+1 = Zn^2 + C<x,y>
-                j = (2*r*i)         + y;
-
-                r = s;
-                i = j;
-
-                if( (r*r + i*i) > 4.0) // escapes to infinity so trace path
-                {
-                    plot( x, y, nWorld2ImageX, nWorld2ImageY, gpGreyscaleTexels, gnWidth, gnHeight, gnMaxDepth );
-                    break;
-                }
-            }
-        }
-
-        VERBOSE
-        {
-            double percent = (100.0  * iCel) / nCel;
-            for( int i = 0; i < 32; i++ )
-                printf( "%c", 8 ); // ASCII backspace
-
-            printf( "%6.2f%% = %d / %d", percent, iCel, nCel ); // iCol, nCol );
-            fflush( stdout );
-        }
-    }
-#else
-    // Note:
-    //    omp parallel     -- spawn a group of threads, for() excuted for each thread
-    //    omp parallel for -- divie loop amongst the threads
-
+// BEGIN OMP
+    /* */ int iCel = 0                  ; // Progress status for percent compelete
 #pragma omp parallel for
+// END OMP
     for( int iCol = 0; iCol < nCol; iCol++ )
     {
+        const double x = gnWorldMinX + (dx*iCol);
+
 // BEGIN OMP
-        double    x    = gnWorldMinX + (dx*iCol);
-        int       iTid = omp_get_thread_num(); // Get Thread Index: 0 .. nCores-1
+        const int iTid = omp_get_thread_num(); // Get Thread Index: 0 .. nCores-1
         uint16_t* pTex = gaThreadsTexels[ iTid ];
 // END OMP
 
         for( int iRow = 0; iRow < nRow; iRow++ )
         {
-            double y = gnWorldMinY + (dy*iRow);
+            const double y = gnWorldMinY + (dy*iRow);
 
 // BEGIN OMP
 #pragma omp atomic 
-            iCel++;
 // END OMP
+            iCel++;
 
             double r = 0., i = 0., s, j;
-            for (int depth = 0; depth < gnMaxDepth; depth++)
-            {
-                s = ((r*r) - (i*i)) + x; // Zn+1 = Zn^2 + C<x,y>
-                j = (2*r*i)         + y;
-
-                r = s;
-                i = j;
-
-                if( (r*r + i*i) > 4.0) // escapes to infinity so trace path
-                {
-                    plot( x, y, nWorld2ImageX, nWorld2ImageY, pTex, gnWidth, gnHeight, gnMaxDepth );
-                    break;
-                }
-            }
-        }
-// BEGIN OMP
-        if( iTid > -1 ) // All threads can print but need to guard with a critical section
-// END OMP
-        VERBOSE
-        {
-            double percent = (100.0  * iCel) / nCel;
-#pragma omp critical
-            {
-                for( int i = 0; i < 40; i++ )
-                    printf( "%c", 8 ); // ASCII backspace
-
-                printf( "%6.2f%% = %d / %d", percent, iCel, nCel ); // iCol, nCol );
-                fflush( stdout );
-            }
-        }
-    }
-#endif
-
-#if 0
-    // 1. Scatter
-
-    // Linearize to 1D
-// #pragma OMP parallel for
-    for( int iCel = 0; iCel < nCel; iCel++ )
-    {
-        const int       iTid = omp_get_thread_num(); // Get Thread Index: 0 .. nCores-1
-        /* */ uint16_t* pTex = gapCoreTexels[ iTid ];
-
-        const int       iCol = iCel / nCol;
-        const int       iRow = iCel % nCol;
-
-        /* */ double    r = 0., i = 0., s, j;
-        const double    x = gnWorldMinX + (iCol * dx);
-        const double    y = gnWorldMinY + (iRow * dy);
-
             for (int depth = 0; depth < gnMaxDepth; depth++)
             {
                 s = (r*r - i*i) + x; // Zn+1 = Zn^2 + C<x,y>
@@ -540,25 +512,31 @@ int Buddhabrot()
                 r = s;
                 i = j;
 
-                if  ((r*r + i*i) > 4.0) // escapes to infinity so trace path
+                if ((r*r + i*i) > 4.0) // escapes to infinity so trace path
                 {
                     plot( x, y, nWorld2ImageX, nWorld2ImageY, pTex, gnWidth, gnHeight, gnMaxDepth );
                     break;
                 }
             }
+        }
 
-        if( iTid == 0 )
         VERBOSE
         {
-            double percent = (100.0  * iCel) / nCel;
-            for( int i = 0; i < 32; i++ )
-                printf( "%c", 8 ); // ASCII backspace
+// BEGIN OMP
+        // All threads can print but need to guard with a critical section
+#pragma omp critical
+            {
+// END OMP
+                const double percent = (100.0  * iCel) / nCel;
 
-            printf( "%6.2f%% = %d / %d", percent, iCel, nCel ); // iCol, nCol );
-            fflush( stdout );
+                for( int i = 0; i < 40; i++ )
+                    printf( "%c", 8 ); // ASCII backspace
+
+                printf( "%6.2f%% = %d / %d", percent, iCel, nCel );
+                fflush( stdout );
+            }
         }
     }
-#endif
 
 // BEGIN OMP
     // 2. Gather
@@ -581,7 +559,7 @@ int Buddhabrot()
 int Usage()
 {
     printf(
-"Buddhabrot v1.8 by Michael Pohoreski\n"
+"Buddhabrot (OMP) v1.9 by Michael Pohoreski\n"
 "Usage: [width height depth]\n"
 "\n"
 "-?   Dipslay usage help\n"
@@ -642,7 +620,7 @@ int main( int nArg, char * aArg[] )
         int nCells = Buddhabrot();
     stopwatch.Stop();
     stopwatch.Throughput( nCells ); // Calculate throughput in pixels/s
-    printf( "%2d %cpix/s (%d pixels, %.f seconds = %d:%d)\n"
+    printf( "%d %cpix/s (%d pixels, %.f seconds = %d:%d)\n"
         , (int)stopwatch.throughput.per_sec, stopwatch.throughput.prefix
         , nCells
         , stopwatch.elapsed

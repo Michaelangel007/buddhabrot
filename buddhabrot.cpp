@@ -2,10 +2,10 @@
     http://en.wikipedia.org/wiki/User_talk:Michael.Pohoreski/Buddhabrot.cpp
 
     Optimized and cleaned up version by Michael Pohoreski
-    Original version by Evercat
+    Based on the original version by Evercat
 
         g++ -Wall -O2 buddhabrot.cpp -o buddhabrot
-        buddhabrot 20000 4000 3000
+        ./bin/buddhabrot 3000 4000 20000
 
    Released under the GNU Free Documentation License
    or the GNU Public License, whichever you prefer.
@@ -26,9 +26,9 @@
 // Globals
 
     // Input parameters
-    double    gnWorldMinX        = -2.102613;
+    double    gnWorldMinX        = -2.102613; // WorldW = MaxX-MinX = 3.303226
     double    gnWorldMaxX        =  1.200613;
-    double    gnWorldMinY        = -1.237710;
+    double    gnWorldMinY        = -1.237710; // WorldH = MaxY-MinY = 2.47742 
     double    gnWorldMaxY        =  1.239710;
 
     int       gnMaxDepth         = 1000; // max number of iterations == # of pixels to plot per complex number
@@ -83,7 +83,7 @@
         } SYSTEMTIME, *PSYSTEMTIME;
     */
 
-    // WTF!?!? Exists in winsock2.h
+    // *sigh* Microsoft has this in winsock2.h because they are too lazy to put it in the standard location ... !?!?
     typedef struct timeval {
         long tv_sec;
         long tv_usec;
@@ -172,13 +172,13 @@
 // ========================================================================
 void AllocImageMemory( const int width, const int height )
 {
-    const size_t area           = width * height;
+    const size_t nArea           = width * height;
 
-    const size_t greyscaleBytes = area  * sizeof( uint16_t );
-    gpGreyscaleTexels = (uint16_t*) malloc( greyscaleBytes );   // 1x 16-bit channel: K
-    memset( gpGreyscaleTexels, 0, greyscaleBytes );
+    const size_t nGreyscaleBytes = nArea  * sizeof( uint16_t );
+    gpGreyscaleTexels = (uint16_t*) malloc( nGreyscaleBytes );   // 1x 16-bit channel: K
+    memset( gpGreyscaleTexels, 0, nGreyscaleBytes );
 
-    const size_t chromaticBytes  = area * 3 * sizeof( uint8_t ); // 3x 8-bit channels: R,G,B
+    const size_t chromaticBytes  = nArea * 3 * sizeof( uint8_t ); // 3x 8-bit channels: R,G,B
     gpChromaticTexels = (uint8_t*) malloc( chromaticBytes );
     memset( gpChromaticTexels, 0, chromaticBytes );
 }
@@ -307,7 +307,7 @@ Image_Greyscale16bitToColor24bit(
 {
     const int       nLen = width * height;
     const uint16_t *pSrc = greyscale;
-          uint8_t  *pDst = chromatic_;
+    /* */ uint8_t  *pDst = chromatic_;
 
     for( int iPix = 0; iPix < nLen; iPix++ )
     {
@@ -373,35 +373,38 @@ void plot( double wx, double wy, double sx, double sy, uint16_t *texels, const i
 }
 
 
+// @return Number of input scaled pixels (Not uber total of all pixels processed)
 // ========================================================================
 int Buddhabrot()
 {
     if( gnScale < 0)
         gnScale = 1;
 
-    const int nCol = gnWidth  * gnScale;
-    const int nRow = gnHeight * gnScale;
+    const int nCol = gnWidth  * gnScale ; // scaled width
+    const int nRow = gnHeight * gnScale ; // scaled height
 
-    /* */ int iPix = 0;           // Progress status for percent compelete
-    const int nPix = nCol * nRow; // Width  * Height;
+    /* */ int iCel = 0                  ; // Progress status for percent compelete
+    const int nCel = nCol     * nRow    ; // scaled width  * scaled height;
 
-    double nWorldW = gnWorldMaxX - gnWorldMinX;
-    double nWorldH = gnWorldMaxY - gnWorldMinY;
+    const double nWorldW = gnWorldMaxX - gnWorldMinX;
+    const double nWorldH = gnWorldMaxY - gnWorldMinY;
 
     // Map Source (world space) to Pixels (image space)
     const double nWorld2ImageX = (double)(gnWidth  - 1.) / nWorldW;
     const double nWorld2ImageY = (double)(gnHeight - 1.) / nWorldH;
 
-    double dx = nWorldW / (nCol - 1.0);
-    double dy = nWorldH / (nRow - 1.0);
+    const double dx = nWorldW / (nCol - 1.0);
+    const double dy = nWorldH / (nRow - 1.0);
 
     for( int iCol = 0; iCol < nCol; iCol++ )
     {
-        double    x    = gnWorldMinX + (dx*iCol);
+        const double x = gnWorldMinX + (dx*iCol);
 
         for( int iRow = 0; iRow < nRow; iRow++ )
         {
-            double y = gnWorldMinY + (dy*iRow);
+            const double y = gnWorldMinY + (dy*iRow);
+
+            iCel++;
 
             double r = 0., i = 0., s, j;
             for (int depth = 0; depth < gnMaxDepth; depth++)
@@ -412,7 +415,7 @@ int Buddhabrot()
                 r = s;
                 i = j;
 
-                if ((r*r) + (i*i) > 4.0) // escapes to infinity so trace path
+                if ((r*r + i*i) > 4.0) // escapes to infinity so trace path
                 {
                     plot( x, y, nWorld2ImageX, nWorld2ImageY, gpGreyscaleTexels, gnWidth, gnHeight, gnMaxDepth );
                     break;
@@ -422,18 +425,17 @@ int Buddhabrot()
 
         VERBOSE
         {
-            double percent = (100.0  * iPix) / nPix;
-            {
+                const double percent = (100.0  * iCel) / nCel;
+
                 for( int i = 0; i < 40; i++ )
                     printf( "%c", 8 ); // ASCII backspace
 
-                printf( "%6.2f%% = %d / %d", percent, iPix, nPix ); // iCol, nCol );
+                printf( "%6.2f%% = %d / %d", percent, iCel, nCel );
                 fflush( stdout );
-            }
         }
     }
 
-    return nPix;
+    return nCel;
 }
 
 
@@ -499,10 +501,15 @@ int main( int nArg, char * aArg[] )
 
     Timer stopwatch;
     stopwatch.Start();
-        int nPixels = Buddhabrot();
+        int nCells = Buddhabrot();
     stopwatch.Stop();
-    stopwatch.Throughput( nPixels ); // Calculate throughput in pixels/s
-    printf( "%d %cpix/s (%d seconds)\n", (int)stopwatch.throughput.per_sec, stopwatch.throughput.prefix, (int)stopwatch.elapsed ); 
+    stopwatch.Throughput( nCells ); // Calculate throughput in pixels/s
+    printf( "%d %cpix/s (%d pixels, %.f seconds = %d:%d)\n"
+        , (int)stopwatch.throughput.per_sec, stopwatch.throughput.prefix
+        , nCells
+        , stopwatch.elapsed
+        , stopwatch.mins, stopwatch.secs
+    );
 
     VERBOSE printf( "\n" );
 
@@ -517,9 +524,9 @@ int main( int nArg, char * aArg[] )
 
     char     filenameBMP[256];
 #if DEBUG
-    sprintf( filenameBMP, "single_buddhabrot_%dx%d_depth_%d_colorscaling_%d_scale_%dx.bmp", gnWidth, gnHeight, gnMaxDepth, (int)gbAutoBrightness, gnScale );
+    sprintf( filenameBMP, "ref_buddhabrot_%dx%d_depth_%d_colorscaling_%d_scale_%dx.bmp", gnWidth, gnHeight, gnMaxDepth, (int)gbAutoBrightness, gnScale );
 #else
-    sprintf( filenameBMP, "single_buddhabrot_%dx%d@%d.bmp", gnWidth, gnHeight, gnMaxDepth );
+    sprintf( filenameBMP, "ref_buddhabrot_%dx%d@%d.bmp", gnWidth, gnHeight, gnMaxDepth );
 #endif
 
     Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
@@ -529,4 +536,3 @@ int main( int nArg, char * aArg[] )
 
     return 0;
 }
-
