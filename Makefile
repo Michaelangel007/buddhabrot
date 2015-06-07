@@ -1,6 +1,6 @@
 # https://github.com/Michaelangel007/buddhabrot
 
-all: bin/buddhabrot bin/omp1 bin/omp2 bin/evercat bin/raw2bmp
+all: bin/buddhabrot bin/omp1 bin/omp2 bin/evercat bin/raw2bmp bin/cuda_info
 
 omp: bin/omp1
 cuda: bin/cuda
@@ -46,6 +46,7 @@ MAKE_BIN_DIR=mkdir -p bin
 #    -lstdc++
 LFLAGS=-fopenmp
 
+CUDAFLAGS=-O2
 
 clean:
 	$(RM) bin/*
@@ -73,13 +74,18 @@ bin/omp2: buddhabrot_omp2.cpp
 	$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LFLAGS)
 
-# CUDA
-bin/cuda: buddhrabrot_cuda.cu
-	$(MAKE_BIN_DIR)
-	nvcc $(CFLAGS) $< -o $@
-
 # Utility
 bin/raw2bmp: raw2bmp.cpp
 	$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@
+
+# CUDA
+bin/cuda: buddhrabrot_cuda.cu
+	$(MAKE_BIN_DIR)
+	nvcc $(CUDAFLAGS) $< -o $@
+
+# CUDA Info
+bin/cuda_info: cuda_info.cu
+	$(MAKE_BIN_DIR)
+	nvcc $(CUDAFLAGS) $< -o $@
 
