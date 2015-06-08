@@ -598,7 +598,7 @@ int main( int nArg, char * aArg[] )
     if ((iArg+3) < nArg) gnMaxDepth = atoi( aArg[iArg+3] );
     if ((iArg+4) < nArg) gnScale    = atoi( aArg[iArg+4] );
 
-    if( !iArg )
+    //if( !iArg )
         printf( "Width: %d  Height: %d  Depth: %d  Scale: %d\n", gnWidth, gnHeight, gnMaxDepth, gnScale );
 
     AllocImageMemory( gnWidth, gnHeight );

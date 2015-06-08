@@ -35,6 +35,17 @@ Using the default 1024x768 with 1,000 depth we can see how much faster paralleli
         | 955@ 3.5 GHz | 1:37 | 1:29 | 1:00 | 0:42 | n/a  | n/a |
         +--------------+------+------+------+------+------+-----+
 
+How depth effects time:
+
+   /bin/omp2    4000 3000 4000
+   /bin/omp2 -v 4000 3000 4000
+
+   /bin/omp2    4000 3000 2000   # 637 seconds, 10:37
+   /bin/omp2 -v 4000 3000 2000
+
+   /bin/omp2    4000 3000 1000
+   /bin/omp2 -v 4000 3000 1000
+
 = Hardware =
 
 * Intel i7 @ 2.6 GHz, OSX 10.9, 16 GB DDR3 1600 MHz, GT 750M (Mobile) (Cores: 384)
