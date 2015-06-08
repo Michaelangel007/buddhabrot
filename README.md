@@ -84,7 +84,7 @@ Given a complex point, P, we iterate Zn+1 = Zn^2 + P a certain amount of times. 
 
 With Mandelbrot:
 
-If the current depth == max depth, then point doesn't escape and we _don't_ plot it -- we simple leave the background "as is."  However, if current depth < max depth then the point P escapes and we plot point P with some false color based on the current depth and move on to processing the next point. Each point updates one and only one pixel in the output bitmap.  Trivial to parallelize and nice and fast.   The only "hard" part is is determining a "nice" color ramp you pick for pixel = [ 0 .. depth-1 ] which is what determines all those cool fractals.  End of the Mandelbrot story.
+If the current depth == max depth, then the original point doesn't escape and we _don't_ plot it -- we simple leave the background "as is."  However, if the current depth < max depth then the point P does "escape" and we plot a pixel with some false color based on the current depth and move on to processing the next point. Each complex point updates one and only one pixel in the output bitmap.  This is trivial to parallelize and is nice and fast.  The only "hard" part is is determining a "nice" color ramp you pick for pixel = [ 0 .. depth-1 ] which is what determines all those cool fractals. :-) End of the Mandelbrot story unless you were a [FracInt]( http://www.fractint.org/) user back in [the day.](https://en.wikipedia.org/wiki/Fractint)
 
 With Buddhabrot:
 
