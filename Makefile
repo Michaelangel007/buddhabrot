@@ -2,10 +2,11 @@
 
 all: bin/buddhabrot \
      bin/omp1 bin/omp2 bin/omp3 bin/omp4 \
-     bin/evercat bin/raw2bmp bin/cuda_info bin/mandelbrot bin/mandelbrot_omp
+     bin/evercat bin/raw2bmp bin/mandelbrot bin/mandelbrot_omp \
+     bin/text_mandelbrot bin/text_buddhabrot
 
 omp: bin/omp1
-cuda: bin/cuda
+cuda: bin/cuda bin/cuda_info
 
 # References:
 # http://stackoverflow.com/questions/714100/os-detecting-makefile
@@ -52,6 +53,16 @@ CUDAFLAGS=-O2
 
 clean:
 	$(RM) bin/*
+
+# Tutorial Mandelbrot
+bin/text_mandelbrot: text_mandelbrot.cpp
+	$(MAKE_BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $<
+
+# Tutorial Buddhabrot
+bin/text_buddhabrot: text_buddhabrot.cpp
+	$(MAKE_BIN_DIR)
+	$(CC) $(CFLAGS) -o $@ $<
 
 # Original reference version by Evercat
 # It doesn't include any built-in timing/benchmark
