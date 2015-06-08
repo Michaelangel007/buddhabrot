@@ -507,10 +507,10 @@ int Buddhabrot()
                 }
             }
 
+        VERBOSE
 // BEGIN OMP
         if( (iTid == 0) && (iCel % gnWidth == 0) )
 // END OMP
-        VERBOSE
         {
             // We no longer need a critical section
             // since we only allow thread 0 to print
