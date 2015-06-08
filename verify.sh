@@ -1,7 +1,7 @@
 #!/bin/bash
 
-mkdir -p data
-cd data
+mkdir -p verify
+cd       verify
 
 echo -e "\nSingle core...   " ; ../bin/buddhabrot
 echo -e "\nMulti core v1 ..." ; ../bin/omp1
