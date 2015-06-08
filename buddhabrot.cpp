@@ -410,7 +410,7 @@ int Buddhabrot()
             for (int depth = 0; depth < gnMaxDepth; depth++)
             {
                 s = (r*r - i*i) + x; // Zn+1 = Zn^2 + C<x,y>
-                j = (2*r*i)     + y;
+                j = (2.0*r*i)   + y;
 
                 r = s;
                 i = j;
@@ -423,9 +423,9 @@ int Buddhabrot()
             }
         }
 
-        VERBOSE
+        VERBOSE // Update % complete for each column
         {
-                const double percent = (100.0  * iCel) / nCel;
+                const double percent = (100.0 * iCel) / nCel;
 
                 for( int i = 0; i < 40; i++ )
                     printf( "%c", 8 ); // ASCII backspace

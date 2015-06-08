@@ -18,6 +18,11 @@ Single core, multi core, CUDA, and OpenCL versions of [Buddhabrot](en.wikipedia.
         | OpenCL         | TODO  | TODO | TODO    | n/a            |
         +----------------+-------+------+---------+----------------+
 
+# Compiling
+
+   On Linux or OSX type: `make`
+
+   The makefile will detect the OS and use the right flags.
 
 # Benchmarks (min:sec)
 
@@ -33,7 +38,7 @@ Using the default 1024x768 with 1,000 depth we can see how much faster paralleli
 = Hardware =
 
 * Intel i7 @ 2.6 GHz, OSX 10.9, 16 GB DDR3 1600 MHz, GT 750M (Mobile) (Cores: 384)
-* AMD Phenom II 955BE @ 3.5 GHz, 16 GB DDR3 PC3 12800, Linux, Ubuntu 12.04 LTS, GTX Titan (Discrete) (Cores: 2688)
+* AMD Phenom II 955BE @ 3.5 GHz, 16 GB DDR3 1333 MHz (PC3 12800), Linux, Ubuntu 12.04 LTS, GTX Titan (Discrete) (Cores: 2688)
 
 = Legend: =
 
@@ -43,26 +48,107 @@ Using the default 1024x768 with 1,000 depth we can see how much faster paralleli
     cuda   Multi core (CUDA  )
     ocl    Multi core (OpenCL)
 
-# Tutorial
+# Tutorial: HOWTO Write a Multi-Core program
 
-Let's convert a single core program, buddhabrot, to a multi-core version.
+Let's convert a single core program, Buddhabrot, to a multi-core version.
+
+Why Buddhabrot and not the more conventional Mandelbrot?
+
+Two reasons: 
+
+a) Mandlebrot is trivial to parallelize while Buddhabrot is not, and
+b) as a result Buddhabrot is less popular; this makes it more interesting.
+
+Here is a small program to demonstrate the how simple Mandelbrot is:
+
+Note: It uses a costly square root with std::abs(z), we'll optimize that out in the Buddhabrot.
+
+* http://bisqwit.iki.fi/story/howto/openmp/
+
+        #include <complex>
+        #include <cstdio>
+
+        typedef std::complex<double> complex;
+
+        int MandelbrotCalculate(complex c, int maxiter)
+        {
+            // iterates z = z + c until |z| >= 2 or maxiter is reached,
+            // returns the number of iterations.
+            complex z = c;
+            int n=0;
+
+            for(; n<maxiter; ++n)
+            {
+                if( std::abs(z) >= 2.0) break;
+                z = z*z + c;
+            }
+            return n;
+        }
+
+        int main()
+        {
+            const int width = 78, height = 44, num_pixels = width*height;
+
+            const complex center(-.7, 0), span(2.7, -(4/3.0)*2.7*height/width);
+            const complex begin = center-span/2.0, end = center+span/2.0;
+            const int maxiter = 100000;
+
+        #pragma omp parallel for ordered schedule(dynamic)
+            for(int pix=0; pix<num_pixels; ++pix)
+            {
+                const int x = pix%width, y = pix/width;
+
+                complex c = begin + complex(
+                    x * span.real() / (width +1.0),
+                    y * span.imag() / (height+1.0));
+
+                int n = MandelbrotCalculate(c, maxiter);
+                if(n == maxiter) n = 0;
+
+            #pragma omp ordered
+                {
+                    char c = ' ';
+                    if(n > 0)
+                    {
+                        static const char charset[] = ".,c8M@jawrpogOQEPGJ";
+                        c = charset[n % (sizeof(charset)-1)];
+                    }
+                    std::putchar(c);
+                    if(x+1 == width) std::puts("|");
+                }
+            }
+        }
 
 Along the way we'll provide timings of various hardware so we can see just how much faster each version becomes.
 
-On our AMD platform the original version runs in 1:37 -- this is mostly due to two things:
+On our AMD platform the original version runs in 1:37 (97 seconds) -- this is mostly due to three things:
 
-a) excessive printf
-b) for() loop with extra counters (floating point and integer)
+  a) is single threaded
+  b) excessive printf() calls
+  c) for() loop with extra counters (floating point and integer)
 
-Since the original version has numerous bugs, we'll clean it up.
+Since the original version has numerous bugs, lacks features, and is hard-coded we'll clean it up so the code is clean, clear, compact, and concise.  Along the way we'll also add multi-core support.
 
 # = Single Core =
 
-Whenever writing any multi-core programs it is best to have a reference single core version.
+Now whenever writing any multi-core programs it is best to have a reference single core version.
 
 This will allow us to do a `diff` on the output (raw.data or .bmp) to check for divergence (i.e. bugs in the multi-core versions.)
 
-We display a percentage based on the columns we've completed.
+The Buddhabrot generation is basically a modified Mandelbrot. For those not familiar with Mandelbrot here is a quick refresher: Given a complex point we iterate "depth" times and check to see if that point "escapes" -- that is, its length is > 2.0.  If it does escape then we plot a black pixel else we note the depth [0..depth] and false color it based on the depth.
+
+In contradistinction the key difference between Mandelbort and Buddhabrot is that when a point "escapes" we plot ALL the pixels of the "path" it took.   Buddhabrot touching many pixels makes this a slightly more complicated problem to parallelize.
+
+One minor optimization we can do with the Mandlebrot / Buddhabrot test "if esscapes" is to remove that costly square root.
+
+
+        if( sqrtf( r*r + i*i ) > 2.0 )
+
+With the equivalent:
+
+        if ((r*r + i*i) > 4.0)
+
+This is what we have so far:
 
         int iCol = 0;
         for( double x = gnWorldMinX; x < gnWorldMaxX; x += dx )
@@ -71,17 +157,16 @@ We display a percentage based on the columns we've completed.
 
             for( double y = gnWorldMinY; y < gnWorldMaxY; y += dy )
             {
-
                 double r = 0., i = 0., s, j;
                 for (int depth = 0; depth < gnMaxDepth; depth++)
                 {
-                    s = ((r*r) - (i*i)) + x; // Zn+1 = Zn^2 + C<x,y>
-                    j = (2*r*i)         + y;
+                    s = (r*r - i*i)) + x; // Zn+1 = Zn^2 + C<x,y>
+                    j = (2*r*i)      + y;
 
                     r = s;
                     i = j;
 
-                    if( (r*r + i*i) > 4.0) // escapes to infinity so trace path
+                    if ((r*r + i*i) > 4.0) // escapes to infinity so trace path
                     {
                         plot( x, y, nWorld2ImageX, nWorld2ImageY, gpGreyscaleTexels, gnWidth, gnHeight, gnMaxDepth );
                         break;
@@ -89,10 +174,12 @@ We display a percentage based on the columns we've completed.
                 }
             }
 
-            VERBOSE
+Let's also display a percentage based on the columns we've completed.
+
+            if( bDisplayProgress ) // Update % complete for each column
             {
                 const double percent = (100.0  * iCol) / nCol;
-                for( int i = 0; i < 32; i++ )
+                for( int i = 0; i < 40; i++ )
                     printf( "%c", 8 ); // ASCII backspace
 
                 printf( "%6.2f%% = %d / %d", percent, iCel, nCel ); // iCol, nCol );
@@ -100,16 +187,22 @@ We display a percentage based on the columns we've completed.
             }
         }
 
-AMD: 89 seconds 
+AMD: 1:29 (89 seconds)
 
-== Pre-OpenMP cleanup ==
+While not impressive, we've already wittled off 10 seconds just by a little cleanup.
 
-To convert from single-core to multi-core we first need to do a few things:
 
-a) When using OpenMP it can run a foor() loop in paralle
-but ONLY if the loop index is an integer, not a floating-point.
+# = Multi Core (OpenMP) =
 
-We convert steping by dx to stepping along the scaled width and scaled height.
+# == Pre-OpenMP cleanup ==
+
+To properly convert from single-core to multi-core we first need to do a few things:
+
+a) When using OpenMP it can run a foor() loop in parallel but ONLY if the loop index is an integer, not a floating-point value.  Hmm.
+
+We convert from steping by dx and dy (floating-point) to stepping along the scaled width and scaled height (integers.)  This means we'll recompute the world space coordintes.
+
+See, File: buddhabrot.cpp, Func: Buddhabrot()
 
         for( int iCol = 0; iCol < nCol; iCol++ )
         {
@@ -124,8 +217,8 @@ We convert steping by dx to stepping along the scaled width and scaled height.
                 double r = 0., i = 0., s, j;
                 for (int depth = 0; depth < gnMaxDepth; depth++)
                 {
-                    s = ((r*r) - (i*i)) + x; // Zn+1 = Zn^2 + C<x,y>
-                    j = (2*r*i)         + y;
+                    s = (r*r - i*i) + x; // Zn+1 = Zn^2 + C<x,y>
+                    j = (2.0*r*i)   + y;
 
                     r = s;
                     i = j;
@@ -138,7 +231,7 @@ We convert steping by dx to stepping along the scaled width and scaled height.
                 }
             }
 
-            VERBOSE
+            if( bDisplayProgress )
             {
                 const double percent = (100.0  * iCel) / nCel;
                 for( int i = 0; i < 40; i++ )
@@ -150,18 +243,24 @@ We convert steping by dx to stepping along the scaled width and scaled height.
         }
 
 
-b)  Since we have N threads all fighting for contention over a single greyscale output bitmap
-We allocate N greyscale bitmaps so each thread has its own indepent local copy -- this will prevent costly `synchronization` fences / barries / waiting.
-We will then merge (add) all the thread's bitmap back into a single master copy.
+b)  Since we have N threads all fighting for contention over a single resource (greyscale output bitmap) we instead allocate N greyscale bitmaps so each thread has its own indepent local copy -- this will prevent costly `synchronization` fences / barries / waiting.
+
+Once we all done then we will then merge (add) all the thread's bitmap back into a single master image.
+
+We'll also need to extend our initial image allocation to allocate N images -- one for each thread.
 
 
-== Multi-Core ==
 
-You need to be careful to specify 'for' in the #pragma
+# == Multi-Core version 1 ==
 
-Note:
+When using OpenMP it is easy to miss some of the syntax for the #pragma's.
+
+i.e. When you parallelize a for loop() there are 2 subtle but different outcomes.
+
     omp parallel     -- spawn a group of threads, for() excuted for each thread!
     omp parallel for -- divie loop amongst all threads, each thread does partial work
+
+Using `omp parallel` won't produce the desired outcome.
 
 
         #pragma omp parallel for
@@ -202,7 +301,7 @@ Note:
         // BEGIN OMP
                 if( iTid > -1 ) // All threads can print but need to guard with a critical section
         // END OMP
-                VERBOSE
+                if( bDisplayProgress )
                 {
                     double percent = (100.0  * iPix) / nPix;
         #pragma omp critical
@@ -216,17 +315,24 @@ Note:
                 }
             }
 
-AMD: 1:00 (60 seconds) 
+On our AMD box we've gone from our initial 1:37 to 1:00 which isn't bad. How much faster is this?  The formulate is:
 
-= Faster Multi-Core? =
+        % faster = 100 * (1 - (new time / old time))
 
-Inspecting the CPU load (Linux: System Monitor, OSX: Activity Monitor, Windows: Task Manager) we notice that only a few cores tend to be pegged.
+        = 100 * 1 - (60 / 96)
+        = 37.5% faster
+
+Can we do better?
+
+# == Faster Multi-Core? ==
+
+Inspecting the CPU load (Linux: System Monitor, OSX: Activity Monitor, Windows: Task Manager) we notice that only a few cores tend to be pegged. :-(
 
 Why?
 
-The key to good multi-core performance is load balancing. We have 2 loops but we're only effectively parallelizing the outer.
+The key to good multi-core performance is load balancing. We have 2 loops but we're only effectively parallelizing the outer.  Ack!
 
-If we linearize the 2D loop into a 1D loop we can achieve better CPU utilization; we are breaking the large tasks down into smaller ones.
+If we "linearize" the 2D loop into a 1D loop we can achieve better CPU utilization; we are breaking large tasks down into smaller ones that can be scheduled across the cores.
 
             // 1. Scatter
 
@@ -257,14 +363,13 @@ If we linearize the 2D loop into a 1D loop we can achieve better CPU utilization
 
                         if  ((r*r + i*i) > 4.0) // escapes to infinity so trace path
                         {
-        #pragma omp critical
                             plot( x, y, nWorld2ImageX, nWorld2ImageY, pTex, gnWidth, gnHeight, gnMaxDepth );
                             break;
                         }
                     }
 
                 if( iTid == 0 )
-                VERBOSE
+                if( bDisplayProgress )
                 {
                     {
                         const double percent = (100.0  * iCel) / nCel;
@@ -290,8 +395,46 @@ If we linearize the 2D loop into a 1D loop we can achieve better CPU utilization
             }
         // END OMP
 
+We try out the new code `bin/omp2` and see we have a time of 0:42 seconds which looks great!
 
-# Verification
+        % faster = 100 * (1 - (new time / old time))
+
+        = 100 * 1 - (47 / 96)
+        = 51.04% faster
+
+Except there is one minor performance penalty. What!?
+
+Hint: It is with output.
+
+Notice that if we are displaying the progress then for _every_ cell update we are calling printf() and fflush(). This means we are spending enormous amounts of time outputting the progress -- all this overheads adds up! Ideally we would check every N cells. Just how bad is this?
+
+For example, on the i7
+
+        bin/omp2     # 17 seconds, 0:17
+        bin/omp2 -v  # 73 seconds, 1:13
+
+Whoa!
+
+Fortunately the fix is simple:
+
+From:
+
+        if( iTid == 0 )
+        if( bDisplayProgress )
+
+To:
+
+        if( (iTid == 0) && (iCel % gnWidth == 0) )
+        if( bDisplayProgress )
+
+With output on the i7 we're back down to:
+
+        bin/omp2 -v  # 22 seconds, 0:22
+
+Thus we see that there is always a trade-off between raw speed and displaying a progress.
+
+
+# = Verification =
 
 Ther is a shell script `verify.sh` (Linux, OSX) that will very the raw output for the various versions.
 
@@ -302,3 +445,5 @@ Ther is a shell script `verify.sh` (Linux, OSX) that will very the raw output fo
 * PDF: [OpenMP by Example](http://people.math.umass.edu/~johnston/PHI_WG_2014/OpenMPSlides_tamu_sc.pdf)
 * HTML: https://computing.llnl.gov/tutorials/openMP/
 * PPT: http://www.cs.berkeley.edu/~mhoemmen/cs194/Lectures/openmp-tutorial.ppt
+* https://software.intel.com/en-us/node/527527
+* http://stackoverflow.com/questions/14016026/openmp-and-pragma-omp-atomic

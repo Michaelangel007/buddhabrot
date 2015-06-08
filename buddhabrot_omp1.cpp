@@ -103,10 +103,7 @@ Also see:
     float     gnScaleB           = 0.18; // Default: (5010 - 230) * 0.18 = 860.4
 
     bool      gbVerbose          = false;
-    bool      gbSaveRawGreyscale = true ;
-
-    // Calculated/Cached
-    uint32_t  gnImageArea        =    0; // image width * image height
+    bool      gbSaveRawGreyscale = true ; // Default to yes for OpenMP
 
     // Output
     uint16_t *gpGreyscaleTexels  = NULL; // [ height ][ width ] 16-bit greyscale
@@ -435,7 +432,7 @@ void plot( double wx, double wy, double sx, double sy, uint16_t *texels, const i
     for( int depth = 0; depth < maxdepth; depth++ )
     {
         s = (r*r - i*i) + wx;
-        j = (2*r*i)     + wy;
+        j = (2.0*r*i)   + wy;
 
         r = s;
         i = j;
@@ -502,7 +499,7 @@ int Buddhabrot()
             for (int depth = 0; depth < gnMaxDepth; depth++)
             {
                 s = (r*r - i*i) + x; // Zn+1 = Zn^2 + C<x,y>
-                j = (2*r*i)     + y;
+                j = (2.0*r*i)   + y;
 
                 r = s;
                 i = j;
