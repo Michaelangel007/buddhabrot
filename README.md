@@ -31,8 +31,8 @@ Using the default 1024x768 at 1,000 depth we can see how much faster parallelizi
         +--------------+------+------+------+------+------+------+-----+
         | Hardware     | org. | cpu1 | omp1 | omp2 | omp3 | cuda | ocl |
         +--------------+------+------+------+------+------+------+-----+
-        | i7 @ 2.6 GHz | 0:57 | 0:55 | 0:21 | 0:17 | 0:10 | n/a  | n/a |
-        | 955@ 3.5 GHz | 1:37 | 1:29 | 1:00 | 0:42 | 0:28 | n/a  | n/a |
+        | i7 @ 2.6 GHz | 0:57 | 0:55 | 0:22 | 0:17 | 0:10 | n/a  | n/a |
+        | 955@ 3.5 GHz | 1:37 | 1:29 | 0:59 | 0:42 | 0:28 | n/a  | n/a |
         +--------------+------+------+------+------+------+------+-----+
 
 = Legend: =
@@ -42,6 +42,7 @@ Using the default 1024x768 at 1,000 depth we can see how much faster parallelizi
     omp1   Multi core (OpenMP) initial version 1
     omp2   Multi core (OpenMP) faster  version 2
     omp3   Multi core (OpenMP) fastest version 3
+    omp4   Multi core (OpenMP) version 3 with float32
     cuda   Multi core (CUDA  )
     ocl    Multi core (OpenCL)
 
@@ -361,8 +362,8 @@ On our AMD box we've gone from our initial 1:37 to 1:00 which isn't bad. How muc
 
         % faster = 100 * (1 - (new time / old time))
 
-        = 100 * 1 - (60 / 96)
-        = 37.5% faster
+        = 100 * 1 - (59 / 96)
+        = 38.5% faster
 
 Can we do better?
 
@@ -749,10 +750,11 @@ Thus we see that there is always a trade-off between raw speed and displaying a 
 
 # == A matter of precision ==
 
-Since we are using doubles what would happen if we used floats?
+Since we are using `doubles` what would happen if we used `floats`?
 
 File: buddhabrot_omp4.cpp
 
+Luckily Modern CPU's don't have a float64 penalty compared to float32.
 
 
 # = Verification =
