@@ -2,7 +2,11 @@
 
 Single core, multi core, CUDA (forthcoming), and OpenCL (forthcoming) versions of [Buddhabrot](http://en.wikipedia.org/wiki/Buddhabrot)
 
-This 2,880x2,160 at 32,768 depth [image](https://github.com/Michaelangel007/buddhabrot/blob/master/data/buddhabrot_2880x2160_32768.bmp) took 42 minutes on an i7 utilizing all 8 cores.
+This 2,160x2,880 at 32,768 depth [image](https://github.com/Michaelangel007/buddhabrot/blob/master/data/buddhabrot_2160x2880_32768.bmp) took 42 minutes on an i7 utilizing all 8 cores.
+
+Here is is at 1/2 size:
+
+<img src="https://github.com/Michaelangel007/buddhabrot/blob/master/data/buddhabrot_1080x1440_32768.png">
 
 # Status
 
