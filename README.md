@@ -24,12 +24,12 @@ Single core, multi core, CUDA, and OpenCL versions of [Buddhabrot](en.wikipedia.
 
    The makefile will detect the OS and use the right flags.
 
-# Benchmarks (min:sec)
+# Benchmarks (min:sec) (Lower is Better)
 
 Using the default 1024x768 at 1,000 depth we can see how much faster parallelizing the code can be:
 
         +--------------+------+------+------+------+------+------+-----+
-        | Hardware     | org  | cpu1 | omp1 | omp2 | omp3 | cuda | ocl |
+        | Hardware     | org. | cpu1 | omp1 | omp2 | omp3 | cuda | ocl |
         +--------------+------+------+------+------+------+------+-----+
         | i7 @ 2.6 GHz | 0:57 | 0:55 | 0:21 | 0:17 | 0:10 | n/a  | n/a |
         | 955@ 3.5 GHz | 1:37 | 1:29 | 1:00 | 0:42 | 0:28 | n/a  | n/a |
@@ -37,6 +37,7 @@ Using the default 1024x768 at 1,000 depth we can see how much faster parallelizi
 
 = Legend: =
 
+    org.   Original Evercat version
     cpu1   Single core master reference
     omp1   Multi core (OpenMP) initial version 1
     omp2   Multi core (OpenMP) faster  version 2
