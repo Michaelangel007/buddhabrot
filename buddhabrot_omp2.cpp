@@ -109,9 +109,6 @@ Also see:
     uint16_t *gpGreyscaleTexels  = NULL; // [ height ][ width ] 16-bit greyscale
     uint8_t  *gpChromaticTexels  = NULL; // [ height ][ width ] 24-bit RGB
 
-    const int BUFFER_BACKSPACE   = 64;
-    char      gaBackspace[ BUFFER_BACKSPACE ];
-
 // BEGIN OMP
     // The single 16-bit brightness buffer is a shared resource
     // We would incur a major performance penalty via atomic access
@@ -260,11 +257,6 @@ void AllocImageMemory( const int width, const int height )
         memset( gaThreadsTexels[ iThread ], 0,                   nGreyscaleBytes );
     }
 // END OMP
-
-    for( int i = 0; i < (BUFFER_BACKSPACE-1); i++ )
-        gaBackspace[ i ] = 8; // ASCII backspace
-
-    gaBackspace[ BUFFER_BACKSPACE-1 ] = 0;
 }
 
 
@@ -434,7 +426,7 @@ inline
 void plot( double wx, double wy, double sx, double sy, uint16_t *texels, const int width, const int height, const int maxdepth )
 {
     double  r = 0., i = 0.; // Zn   current Complex< real, imaginary >
-    double  s    , j      ; // Zn+1 next    Complex< real, imaginary >
+    double  s     , j     ; // Zn+1 next    Complex< real, imaginary >
     int     u     , v     ; // texel coords
 
     for( int depth = 0; depth < maxdepth; depth++ )
@@ -467,7 +459,6 @@ int Buddhabrot()
     const int nCol = gnWidth  * gnScale ; // scaled width
     const int nRow = gnHeight * gnScale ; // scaled height
 
-    /* */ int iCel = 0                  ; // Progress status for percent compelete
     const int nCel = nCol     * nRow    ; // scaled width  * scaled height;
 
     const double nWorldW = gnWorldMaxX - gnWorldMinX;
@@ -486,12 +477,9 @@ int Buddhabrot()
 // BEGIN OMP
 #pragma omp parallel for
 // END OMP
-    for( int iPix = 0; iPix < nCel; iPix++ )
+    for( int iCel = 0; iCel < nCel; iCel++ )
     {
 // BEGIN OMP
-#pragma omp atomic
-        iCel++;
-
         const int       iTid = omp_get_thread_num(); // Get Thread Index: 0 .. nCores-1
         /* */ uint16_t* pTex = gaThreadsTexels[ iTid ];
 // END OMP
@@ -521,7 +509,7 @@ int Buddhabrot()
 
         VERBOSE
 // BEGIN OMP
-        if (iTid == 0)
+        if( (iTid == 0) && (iCel % gnWidth == 0) )
 // END OMP
         {
             // We no longer need a critical section
@@ -529,7 +517,10 @@ int Buddhabrot()
             {
                 const double percent = (100.0  * iCel) / nCel;
 
-                printf( "%6.2f%% = %d / %d%s", percent, iCel, nCel, gaBackspace );
+                for( int i = 0; i < 40; i++ )
+                    printf( "%c", 8 ); // ASCII backspace
+
+                printf( "%6.2f%% = %d / %d", percent, iCel, nCel );
                 fflush( stdout );
             }
         }
@@ -625,12 +616,9 @@ int main( int nArg, char * aArg[] )
     );
 
     VERBOSE printf( "\n" );
-    int nMaxBrightness = Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
 
     if( gbSaveRawGreyscale )
     {
-        printf( "Max brightness: %d\n", nMaxBrightness );
-
         char     filenameRAW[ 256 ];
         sprintf( filenameRAW, "raw_omp2_buddhabrot_%dx%d_%d_%dx.u16.data", gnWidth, gnHeight, gnMaxDepth, gnScale );
 
@@ -645,6 +633,7 @@ int main( int nArg, char * aArg[] )
     sprintf( filenameBMP, "omp2_buddhabrot_%dx%d_%d.bmp", gnWidth, gnHeight, gnMaxDepth );
 #endif
 
+    Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
     Image_Greyscale16bitToColor24bit( gpGreyscaleTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
     BMP_WriteColor24bit( filenameBMP, gpChromaticTexels, gnWidth, gnHeight );
     printf( "Saved: %s\n", filenameBMP );

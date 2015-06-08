@@ -538,7 +538,204 @@ Fortunately atomics are relatively cheap. Here is the final version:
             }
 
 
-Our best time on the AMD is:
+AMD time 0:42
+
+        int Buddhabrot()
+        {
+            if( gnScale < 0)
+                gnScale = 1;
+
+            const int nCol = gnWidth  * gnScale ; // scaled width
+            const int nRow = gnHeight * gnScale ; // scaled height
+
+            const int nCel = nCol     * nRow    ; // scaled width  * scaled height;
+
+            const double nWorldW = gnWorldMaxX - gnWorldMinX;
+            const double nWorldH = gnWorldMaxY - gnWorldMinY;
+
+            // Map Source (world space) to Pixels (image space)
+            const double nWorld2ImageX = (double)(gnWidth  - 1.) / nWorldW;
+            const double nWorld2ImageY = (double)(gnHeight - 1.) / nWorldH;
+
+            const double dx = nWorldW / (nCol - 1.0);
+            const double dy = nWorldH / (nRow - 1.0);
+
+            // 1. Scatter
+
+            // Linearize to 1D
+        // BEGIN OMP
+        #pragma omp parallel for
+        // END OMP
+            for( int iCel = 0; iCel < nCel; iCel++ )
+            {
+        // BEGIN OMP
+                const int       iTid = omp_get_thread_num(); // Get Thread Index: 0 .. nCores-1
+                /* */ uint16_t* pTex = gaThreadsTexels[ iTid ];
+        // END OMP
+
+                const int       iCol = iCel % nCol;
+                const int       iRow = iCel / nCol;
+
+                const double    x = gnWorldMinX + (iCol * dx);
+                const double    y = gnWorldMinY + (iRow * dy);
+
+                /* */ double    r = 0., i = 0., s, j;
+
+                    for (int depth = 0; depth < gnMaxDepth; depth++)
+                    {
+                        s = (r*r - i*i) + x; // Zn+1 = Zn^2 + C<x,y>
+                        j = (2.0*r*i)   + y;
+
+                        r = s;
+                        i = j;
+
+                        if ((r*r + i*i) > 4.0) // escapes to infinity so trace path
+                        {
+                            plot( x, y, nWorld2ImageX, nWorld2ImageY, pTex, gnWidth, gnHeight, gnMaxDepth );
+                            break;
+                        }
+                    }
+
+                VERBOSE
+        // BEGIN OMP
+                if( (iTid == 0) && (iCel % gnWidth == 0) )
+        // END OMP
+                {
+                    // We no longer need a critical section
+                    // since we only allow thread 0 to print
+                    {
+                        const double percent = (100.0  * iCel) / nCel;
+
+                        for( int i = 0; i < 40; i++ )
+                            printf( "%c", 8 ); // ASCII backspace
+
+                        printf( "%6.2f%% = %d / %d", percent, iCel, nCel );
+                        fflush( stdout );
+                    }
+                }
+            }
+
+        // BEGIN OMP
+            // 2. Gather
+            const int nPix = gnWidth  * gnHeight; // Normal area
+            for( int iThread = 0; iThread < gnThreads; iThread++ )
+            {
+                const uint16_t *pSrc = gaThreadsTexels[ iThread ];
+                /* */ uint16_t *pDst = gpGreyscaleTexels;
+
+                for( int iPix = 0; iPix < nPix; iPix++ )
+                    *pDst++ += *pSrc++;
+            }
+        // END OMP
+
+            return nCel;
+        }
+
+
+# == Fastest Multi-Core? ==
+
+Is this the fastest we can do? Believe it or not we can further tweak the inner loop:
+
+        // @return Number of input scaled pixels (Not uber total of all pixels processed)
+        // ========================================================================
+        int Buddhabrot()
+        {
+            if( gnScale < 0)
+                gnScale = 1;
+
+            const int nCol = gnWidth  * gnScale ; // scaled width
+            const int nRow = gnHeight * gnScale ; // scaled height
+
+            /* */ int iCel = 0                  ; // Progress status for percent compelete
+            const int nCel = nCol     * nRow    ; // scaled width  * scaled height;
+
+            const double nWorldW = gnWorldMaxX - gnWorldMinX;
+            const double nWorldH = gnWorldMaxY - gnWorldMinY;
+
+            // Map Source (world space) to Pixels (image space)
+            const double nWorld2ImageX = (double)(gnWidth  - 1.) / nWorldW;
+            const double nWorld2ImageY = (double)(gnHeight - 1.) / nWorldH;
+
+            const double dx = nWorldW / (nCol - 1.0);
+            const double dy = nWorldH / (nRow - 1.0);
+
+            // 1. Scatter
+
+            // Linearize to 1D
+        // BEGIN OMP
+        #pragma omp parallel for
+        // END OMP
+            for( int iPix = 0; iPix < nCel; iPix++ )
+            {
+        // BEGIN OMP
+        #pragma omp atomic
+                iCel++;
+
+                const int       iTid = omp_get_thread_num(); // Get Thread Index: 0 .. nCores-1
+                /* */ uint16_t* pTex = gaThreadsTexels[ iTid ];
+        // END OMP
+
+                const int       iCol = iCel % nCol;
+                const int       iRow = iCel / nCol;
+
+                const double    x = gnWorldMinX + (iCol * dx);
+                const double    y = gnWorldMinY + (iRow * dy);
+
+                /* */ double    r = 0., i = 0., s, j;
+
+                    for (int depth = 0; depth < gnMaxDepth; depth++)
+                    {
+                        s = (r*r - i*i) + x; // Zn+1 = Zn^2 + C<x,y>
+                        j = (2.0*r*i)   + y;
+
+                        r = s;
+                        i = j;
+
+                        if ((r*r + i*i) > 4.0) // escapes to infinity so trace path
+                        {
+                            plot( x, y, nWorld2ImageX, nWorld2ImageY, pTex, gnWidth, gnHeight, gnMaxDepth );
+                            break;
+                        }
+                    }
+
+                VERBOSE
+        // BEGIN OMP
+                if (iTid == 0)
+        // END OMP
+                {
+                    // We no longer need a critical section
+                    // since we only allow thread 0 to print
+                    {
+                        const double percent = (100.0  * iCel) / nCel;
+
+                        printf( "%6.2f%% = %d / %d%s", percent, iCel, nCel, gaBackspace );
+                        fflush( stdout );
+                    }
+                }
+            }
+
+        // BEGIN OMP
+            // 2. Gather
+            const int nPix = gnWidth  * gnHeight; // Normal area
+            for( int iThread = 0; iThread < gnThreads; iThread++ )
+            {
+                const uint16_t *pSrc = gaThreadsTexels[ iThread ];
+                /* */ uint16_t *pDst = gpGreyscaleTexels;
+
+                for( int iPix = 0; iPix < nPix; iPix++ )
+                    *pDst++ += *pSrc++;
+            }
+        // END OMP
+
+            return nCel;
+        }
+
+Timings:
+
+   i7 : 0:10 seconds
+   AMD: 0:28 seconds
+
+Our third tweak gets our best time on AMD down to:
 
         % faster = 100 * (1 - (new time / old time))
 
@@ -548,8 +745,14 @@ Our best time on the AMD is:
 
 Thus our final time on the i7 is 0:10 !
 
-
 Thus we see that there is always a trade-off between raw speed and displaying a progress.
+
+# == A matter of precision ==
+
+Since we are using doubles what would happen if we used floats?
+
+File: buddhabrot_omp4.cpp
+
 
 
 # = Verification =

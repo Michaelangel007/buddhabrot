@@ -556,7 +556,7 @@ int Buddhabrot()
 int Usage()
 {
     printf(
-"Buddhabrot (OMP) v1.10 by Michael Pohoreski\n"
+"Buddhabrot (OMP) v1.11 by Michael Pohoreski\n"
 "Usage: [width height depth]\n"
 "\n"
 "-?   Dipslay usage help\n"
@@ -632,7 +632,7 @@ int main( int nArg, char * aArg[] )
         printf( "Max brightness: %d\n", nMaxBrightness );
 
         char     filenameRAW[ 256 ];
-        sprintf( filenameRAW, "raw_omp2_buddhabrot_%dx%d_%d_%dx.u16.data", gnWidth, gnHeight, gnMaxDepth, gnScale );
+        sprintf( filenameRAW, "raw_omp3_buddhabrot_%dx%d_%d_%dx.u16.data", gnWidth, gnHeight, gnMaxDepth, gnScale );
 
         RAW_WriteGreyscale16bit( filenameRAW, gpGreyscaleTexels, gnWidth, gnHeight );
         printf( "Saved: %s\n", filenameRAW );
@@ -640,9 +640,9 @@ int main( int nArg, char * aArg[] )
 
     char     filenameBMP[256];
 #if DEBUG
-    sprintf( filenameBMP, "omp2_buddhabrot_%dx%d_depth_%d_colorscaling_%d_scale_%dx.bmp", gnWidth, gnHeight, gnMaxDepth, (int)gbAutoBrightness, gnScale );
+    sprintf( filenameBMP, "omp3_buddhabrot_%dx%d_depth_%d_colorscaling_%d_scale_%dx.bmp", gnWidth, gnHeight, gnMaxDepth, (int)gbAutoBrightness, gnScale );
 #else
-    sprintf( filenameBMP, "omp2_buddhabrot_%dx%d_%d.bmp", gnWidth, gnHeight, gnMaxDepth );
+    sprintf( filenameBMP, "omp3_buddhabrot_%dx%d_%d.bmp", gnWidth, gnHeight, gnMaxDepth );
 #endif
 
     Image_Greyscale16bitToColor24bit( gpGreyscaleTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );

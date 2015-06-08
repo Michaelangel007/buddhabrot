@@ -1,6 +1,8 @@
 # https://github.com/Michaelangel007/buddhabrot
 
-all: bin/buddhabrot bin/omp1 bin/omp2 bin/omp3 bin/evercat bin/raw2bmp bin/cuda_info bin/mandelbrot bin/mandelbrot_omp
+all: bin/buddhabrot \
+     bin/omp1 bin/omp2 bin/omp3 bin/omp4 \
+     bin/evercat bin/raw2bmp bin/cuda_info bin/mandelbrot bin/mandelbrot_omp
 
 omp: bin/omp1
 cuda: bin/cuda
@@ -76,6 +78,11 @@ bin/omp2: buddhabrot_omp2.cpp
 
 # Multi Core (OpenMP) Fastest - Third version - parallel outer and inner loop -> linearized
 bin/omp3: buddhabrot_omp3.cpp
+	$(MAKE_BIN_DIR)
+	$(CC) $(CFLAGS) $< -o $@ $(LFLAGS)
+
+# Multi Core (OpenMP) Float
+bin/omp4: buddhabrot_omp4.cpp
 	$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LFLAGS)
 
