@@ -1,6 +1,8 @@
 # Buddhabrot
 
-Single core, multi core, CUDA (forthcoming), and OpenCL (forthcoming) versions of [Buddhabrot](en.wikipedia.org/wiki/Buddhabrot)
+Single core, multi core, CUDA (forthcoming), and OpenCL (forthcoming) versions of [Buddhabrot](http://en.wikipedia.org/wiki/Buddhabrot)
+
+This 2,880x2,160 at 32,768 depth [image](https://github.com/Michaelangel007/buddhabrot/blob/master/data/buddhabrot_2880x2160_32768.bmp) took 42 minutes on an i7 utilizing all 8 cores.
 
 # Status
 
