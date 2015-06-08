@@ -14,7 +14,7 @@ Heavily cleaned up version based on Mandelbrot at:
 
     typedef std::complex<double> complex;
 
-    int BuddhabrotCalculate( complex c, int max_depth )
+    int MandelbrotCalculate( complex c, int max_depth )
     {
         // iterates z = z + c until |z| >= 2 or max_depth is reached,
         // returns the number of iterations.
@@ -75,7 +75,7 @@ Heavily cleaned up version based on Mandelbrot at:
                 x * span.real() / (width +1.0),
                 y * span.imag() / (height+1.0));
 
-            int cur_depth = BuddhabrotCalculate( p, max_depth );
+            int cur_depth = MandelbrotCalculate( p, max_depth );
 
             if (cur_depth != max_depth)
             {
