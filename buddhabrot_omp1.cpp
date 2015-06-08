@@ -361,7 +361,6 @@ uint16_t
 Image_Greyscale16bitToBrightnessBias( int* bias_, float* scaleR_, float* scaleG_, float* scaleB_ )
 {
     uint16_t nMaxBrightness = Image_Greyscale16bitMaxValue( gpGreyscaleTexels, gnWidth, gnHeight );
-    VERBOSE printf( "Max brightness: %d\n", nMaxBrightness );
 
     if( gbAutoBrightness )
     {
@@ -500,8 +499,8 @@ int Buddhabrot()
 
 // BEGIN OMP
 #pragma omp atomic 
-// END OMP
             iCel++;
+// END OMP
 
             double r = 0., i = 0., s, j;
             for (int depth = 0; depth < gnMaxDepth; depth++)
@@ -625,9 +624,12 @@ int main( int nArg, char * aArg[] )
     );
 
     VERBOSE printf( "\n" );
+    int nMaxBrightness = Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
 
     if( gbSaveRawGreyscale )
     {
+        printf( "Max brightness: %d\n", nMaxBrightness );
+
         char     filenameRAW[ 256 ];
         sprintf( filenameRAW, "raw_omp1_buddhabrot_%dx%d_%d_%dx.u16.data", gnWidth, gnHeight, gnMaxDepth, gnScale );
 
@@ -642,7 +644,7 @@ int main( int nArg, char * aArg[] )
     sprintf( filenameBMP, "omp1_buddhabrot_%dx%d_%d.bmp", gnWidth, gnHeight, gnMaxDepth );
 #endif
 
-    Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
+
     Image_Greyscale16bitToColor24bit( gpGreyscaleTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
     BMP_WriteColor24bit( filenameBMP, gpChromaticTexels, gnWidth, gnHeight );
     printf( "Saved: %s\n", filenameBMP );

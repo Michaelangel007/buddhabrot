@@ -512,9 +512,12 @@ int main( int nArg, char * aArg[] )
     );
 
     VERBOSE printf( "\n" );
+    int nMaxBrightness = Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
 
     if( gbSaveRawGreyscale )
     {
+        printf( "Max brightness: %d\n", nMaxBrightness );
+
         char     filenameRAW[ 256 ];
         sprintf( filenameRAW, "raw_cpu1_buddhabrot_%dx%d_%d_%dx.u16.data", gnWidth, gnHeight, gnMaxDepth, gnScale );
 
@@ -529,7 +532,6 @@ int main( int nArg, char * aArg[] )
     sprintf( filenameBMP, "cpu1_buddhabrot_%dx%d_%d.bmp", gnWidth, gnHeight, gnMaxDepth );
 #endif
 
-    Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
     Image_Greyscale16bitToColor24bit( gpGreyscaleTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
     BMP_WriteColor24bit( filenameBMP, gpChromaticTexels, gnWidth, gnHeight );
     printf( "Saved: %s\n", filenameBMP );

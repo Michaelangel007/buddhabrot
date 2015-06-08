@@ -31,7 +31,7 @@ Using the default 1024x768 with 1,000 depth we can see how much faster paralleli
         +--------------+------+------+------+------+------+-----+
         | Hardware     | org  | cpu1 | omp1 | omp2 | cuda | ocl |
         +--------------+------+------+------+------+------+-----+
-        | i7 @ 2.6 GHz | 0:57 | 0:55 | 0:21 | 0:17 | n/a  | n/a |
+        | i7 @ 2.6 GHz | 0:57 | 0:55 | 0:21 | 0:10 | n/a  | n/a |
         | 955@ 3.5 GHz | 1:37 | 1:29 | 1:00 | 0:42 | n/a  | n/a |
         +--------------+------+------+------+------+------+-----+
 
@@ -67,17 +67,20 @@ Why Buddhabrot and not the more conventional Mandelbrot?
 
 Two reasons: 
 
-a) Mandlebrot is trivial to parallelize while Buddhabrot is not, and
-b) as a result Buddhabrot is less popular; this makes it more interesting.
+* Mandlebrot is trivial to parallelize while Buddhabrot is not, and
+* as a result Buddhabrot is less popular; this makes it more interesting.
 
-Here is a small program to demonstrate the how simple Mandelbrot is:
+Here is a small program to demonstrate how simple Mandelbrot is:
 
-Note: It uses a costly square root with std::abs(z), we'll optimize that out in the Buddhabrot.
+Note: It uses a costly square root with std::abs(z), we'll optimize that out in the Buddhabrot code.
 
 * http://bisqwit.iki.fi/story/howto/openmp/
 
+File: mandelbrot.cpp
+
         #include <complex>
         #include <cstdio>
+        #include <omp.h>
 
         typedef std::complex<double> complex;
 
@@ -134,9 +137,9 @@ Along the way we'll provide timings of various hardware so we can see just how m
 
 On our AMD platform the original version runs in 1:37 (97 seconds) -- this is mostly due to three things:
 
-  a) is single threaded
-  b) excessive printf() calls
-  c) for() loop with extra counters (floating point and integer)
+* is single threaded,
+* excessive printf() calls,
+* for() loop with extra counters (floating point and integer)
 
 Since the original version has numerous bugs, lacks features, and is hard-coded we'll clean it up so the code is clean, clear, compact, and concise.  Along the way we'll also add multi-core support.
 
@@ -209,7 +212,7 @@ While not impressive, we've already wittled off 10 seconds just by a little clea
 
 To properly convert from single-core to multi-core we first need to do a few things:
 
-a) When using OpenMP it can run a foor() loop in parallel but ONLY if the loop index is an integer, not a floating-point value.  Hmm.
+* When using OpenMP it can run a foor() loop in parallel but ONLY if the loop index is an integer, not a floating-point value.  Hmm.
 
 We convert from steping by dx and dy (floating-point) to stepping along the scaled width and scaled height (integers.)  This means we'll recompute the world space coordintes.
 
@@ -254,11 +257,37 @@ See, File: buddhabrot.cpp, Func: Buddhabrot()
         }
 
 
-b)  Since we have N threads all fighting for contention over a single resource (greyscale output bitmap) we instead allocate N greyscale bitmaps so each thread has its own indepent local copy -- this will prevent costly `synchronization` fences / barries / waiting.
+* Since we have N threads all fighting for contention over a single resource (greyscale output bitmap) we instead allocate N greyscale bitmaps so each thread has its own indepent local copy -- this will prevent costly `synchronization` fences / barries / waiting.
 
-Once we all done then we will then merge (add) all the thread's bitmap back into a single master image.
+First, we'll need to extend our initial image allocation to allocate N images -- one for each thread.
 
-We'll also need to extend our initial image allocation to allocate N images -- one for each thread.
+Func: AllocImageMemory()
+
+        // BEGIN OMP
+            gnThreads = omp_get_num_procs();
+            printf( "Detected: %d cores\n", gnThreads );
+
+            for( int iThread = 0; iThread < gnThreads; iThread++ )
+            {
+                        gaThreadsTexels[ iThread ] = (uint16_t*) malloc( nGreyscaleBytes );
+                memset( gaThreadsTexels[ iThread ], 0,                   nGreyscaleBytes );
+            }
+        // END OMP
+
+Next, once we all done then we will then merge (add) all the thread's bitmap back into a single master image.
+
+        // BEGIN OMP
+            // 2. Gather
+            const int nPix = gnWidth  * gnHeight; // Normal area
+            for( int iThread = 0; iThread < gnThreads; iThread++ )
+            {
+                const uint16_t *pSrc = gaThreadsTexels[ iThread ];
+                /* */ uint16_t *pDst = gpGreyscaleTexels;
+
+                for( int iPix = 0; iPix < nPix; iPix++ )
+                    *pDst++ += *pSrc++;
+            }
+        // END OMP
 
 
 
@@ -448,6 +477,68 @@ In order to have an accurate progress with multi-core we must use an atomic coun
 
         #pragma omp atomic
             iPix++;
+
+Fortunately atomics are relatively cheap. Here is the final version:
+
+            // 1. Scatter
+
+            // Linearize to 1D
+        // BEGIN OMP
+        #pragma omp parallel for
+        // END OMP
+            for( int iPix = 0; iPix < nCel; iPix++ )
+            {
+        // BEGIN OMP
+        #pragma omp atomic
+                iCel++;
+
+                const int       iTid = omp_get_thread_num(); // Get Thread Index: 0 .. nCores-1
+                /* */ uint16_t* pTex = gaThreadsTexels[ iTid ];
+        // END OMP
+
+                const int       iCol = iCel % nCol;
+                const int       iRow = iCel / nCol;
+
+                const double    x = gnWorldMinX + (iCol * dx);
+                const double    y = gnWorldMinY + (iRow * dy);
+
+                /* */ double    r = 0., i = 0., s, j;
+
+                    for (int depth = 0; depth < gnMaxDepth; depth++)
+                    {
+                        s = (r*r - i*i) + x; // Zn+1 = Zn^2 + C<x,y>
+                        j = (2.0*r*i)   + y;
+
+                        r = s;
+                        i = j;
+
+                        if ((r*r + i*i) > 4.0) // escapes to infinity so trace path
+                        {
+                            plot( x, y, nWorld2ImageX, nWorld2ImageY, pTex, gnWidth, gnHeight, gnMaxDepth );
+                            break;
+                        }
+                    }
+
+                VERBOSE
+        // BEGIN OMP
+                if (iTid == 0)
+        // END OMP
+                {
+                    // We no longer need a critical section
+                    // since we only allow thread 0 to print
+                    {
+                        const double percent = (100.0  * iCel) / nCel;
+
+                        printf( "%6.2f%% = %d / %d%s", percent, iCel, nCel, gaBackspace );
+                        fflush( stdout );
+                    }
+                }
+            }
+
+
+
+Thus our final time on the i7 is 0:10 !
+
 
 Thus we see that there is always a trade-off between raw speed and displaying a progress.
 
