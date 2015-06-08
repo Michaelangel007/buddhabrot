@@ -486,7 +486,7 @@ int Buddhabrot()
 // END OMP
     for( int iCol = 0; iCol < nCol; iCol++ )
     {
-        const double x = gnWorldMinX + (dx*iCol);
+        const double x = gnWorldMinX + (iCol * dx);
 
 // BEGIN OMP
         const int iTid = omp_get_thread_num(); // Get Thread Index: 0 .. nCores-1
@@ -495,7 +495,7 @@ int Buddhabrot()
 
         for( int iRow = 0; iRow < nRow; iRow++ )
         {
-            const double y = gnWorldMinY + (dy*iRow);
+            const double y = gnWorldMinY + (iRow * dy);
 
 // BEGIN OMP
 #pragma omp atomic 
@@ -606,7 +606,7 @@ int main( int nArg, char * aArg[] )
     if ((iArg+3) < nArg) gnMaxDepth = atoi( aArg[iArg+3] );
     if ((iArg+4) < nArg) gnScale    = atoi( aArg[iArg+4] );
 
-    if( !iArg )
+    //if( !iArg )
         printf( "Width: %d  Height: %d  Depth: %d  Scale: %d\n", gnWidth, gnHeight, gnMaxDepth, gnScale );
 
     AllocImageMemory( gnWidth, gnHeight );
