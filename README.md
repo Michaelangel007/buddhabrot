@@ -73,8 +73,33 @@ Why Buddhabrot and not the more conventional Mandelbrot?
 
 Two reasons: 
 
-* Mandlebrot is trivial to parallelize while Buddhabrot is not, and as a result Buddhabrot is less popular
-* Buddhabrot looks cooler.
+* Mandlebrot is trivial to parallelize while Buddhabrot is not, as a result Buddhabrot is less popular,
+* Buddhabrot looks cooler then the over-used Mandelbrot fractal.
+
+== Introduction to Mandelbrot ==
+
+We start with a 2D region. We use complex numbers to define the dimensions of this region.  The gist is that for each complex point in this region we do some processing to generate an image.
+
+Given a complex point, P, we iterate Zn+1 = Zn^2 + P a certain amount of times. We call the maximum number of iterations we process this equation the "maximum depth." If at any time the Euclidean length of this new point, |Zn+1|, is > 2.0 then we will denote the original point as "escaping" -- we will also note the "current depth" when this happened.  _How_ we plot this point depends on if we are rendering the Mandelbrot or Buddhabrot set:
+
+With Mandelbrot:
+
+If the current depth == max depth, then point doesn't escape and we _don't_ plot it -- we simple leave the background "as is."  However, if current depth < max depth then the point P escapes and we plot point P with some false color based on the current depth and move on to processing the next point. Each point updates one and only one pixel in the output bitmap.  Trivial to parallelize and nice and fast.   The only "hard" part is is determining a "nice" color ramp you pick for pixel = [ 0 .. depth-1 ] which is what determines all those cool fractals.  End of the Mandelbrot story.
+
+With Buddhabrot:
+
+Things are slightly more complicated as we iterate the depth (potentially) twice for each point.
+
+Let's say we have two points A and B in this region.
+
+We iterate the complex Zn+1 = Zn^2 + A equation for A. Say after depth iterations we find it does NOT escape.  We don't plot anything for this point. We're done with A and move on.
+
+We now process B and say we find after depth iterations it DOES escapes. Now this is where things become interesting. We _restart_ the equation again but this time for _each_ Zn+1 we plot it's current location. By plot we mean update a 2D histogram bitmap. This has has the effect of leaving a "ghost trail."
+
+Now here's the multi-core problem: You give each point P its own thread.  Each point P is potentially updating hundreds of pixels.  Since it is a shared read-update-write resource we MUST synchronize access to the shared histogram bitmap, say using a critical section; if we don't then we'll get "dropped" pixels. On the other hand if we synchronize access we _completely_ kill performance!  Whoops!  Damn'd if you do, damn'd if you don't.
+
+== Shut up and show me the (Mandelbrot) code! ==
+
 
 Here is a small program to demonstrate how simple Mandelbrot is:
 
@@ -138,7 +163,7 @@ File: [text_mandelbrot.cpp](https://github.com/Michaelangel007/buddhabrot/blob/m
 
                 if (cur_depth != max_depth)
                 {
-                    MandelbrotPlot( cur_depth, x, y, (char*)output, width ); // output[ y ][ x ] = c;
+                    MandelbrotPlot( cur_depth, x, y, (char*)output, width ); // output[y][x] = c
                 }
             }
 
