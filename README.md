@@ -26,14 +26,23 @@ Single core, multi core, CUDA, and OpenCL versions of [Buddhabrot](en.wikipedia.
 
 # Benchmarks (min:sec)
 
-Using the default 1024x768 with 1,000 depth we can see how much faster parallelizing the code can be:
+Using the default 1024x768 at 1,000 depth we can see how much faster parallelizing the code can be:
 
-        +--------------+------+------+------+------+------+-----+
-        | Hardware     | org  | cpu1 | omp1 | omp2 | cuda | ocl |
-        +--------------+------+------+------+------+------+-----+
-        | i7 @ 2.6 GHz | 0:57 | 0:55 | 0:21 | 0:10 | n/a  | n/a |
-        | 955@ 3.5 GHz | 1:37 | 1:29 | 1:00 | 0:42 | n/a  | n/a |
-        +--------------+------+------+------+------+------+-----+
+        +--------------+------+------+------+------+------+------+-----+
+        | Hardware     | org  | cpu1 | omp1 | omp2 | omp3 | cuda | ocl |
+        +--------------+------+------+------+------+------+------+-----+
+        | i7 @ 2.6 GHz | 0:57 | 0:55 | 0:21 | 0:17 | 0:10 | n/a  | n/a |
+        | 955@ 3.5 GHz | 1:37 | 1:29 | 1:00 | 0:42 | 0:28 | n/a  | n/a |
+        +--------------+------+------+------+------+------+------+-----+
+
+= Legend: =
+
+    cpu1   Single core master reference
+    omp1   Multi core (OpenMP) initial version 1
+    omp2   Multi core (OpenMP) faster  version 2
+    omp3   Multi core (OpenMP) fastest version 3
+    cuda   Multi core (CUDA  )
+    ocl    Multi core (OpenCL)
 
 How depth effects time:
 
@@ -50,14 +59,6 @@ How depth effects time:
 
 * Intel i7 @ 2.6 GHz, OSX 10.9, 16 GB DDR3 1600 MHz, GT 750M (Mobile) (Cores: 384)
 * AMD Phenom II 955BE @ 3.5 GHz, 16 GB DDR3 1333 MHz (PC3 12800), Linux, Ubuntu 12.04 LTS, GTX Titan (Discrete) (Cores: 2688)
-
-= Legend: =
-
-    cpu1   Single core master reference
-    omp1   Multi core (OpenMP) initial version 1
-    omp2   Multi core (OpenMP) faster  version 2
-    cuda   Multi core (CUDA  )
-    ocl    Multi core (OpenCL)
 
 # Tutorial: HOWTO Write a Multi-Core program
 
@@ -535,6 +536,13 @@ Fortunately atomics are relatively cheap. Here is the final version:
                 }
             }
 
+
+Our best time on the AMD is:
+
+        % faster = 100 * (1 - (new time / old time))
+
+        = 100 * 1 - (28 / 96)
+        = 70.83% faster
 
 
 Thus our final time on the i7 is 0:10 !
