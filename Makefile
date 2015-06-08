@@ -1,6 +1,6 @@
 # https://github.com/Michaelangel007/buddhabrot
 
-all: bin/buddhabrot bin/omp1 bin/omp2 bin/evercat bin/raw2bmp bin/cuda_info
+all: bin/buddhabrot bin/omp1 bin/omp2 bin/evercat bin/raw2bmp bin/cuda_info bin/mandelbrot bin/mandelbrot_omp
 
 omp: bin/omp1
 cuda: bin/cuda
@@ -88,4 +88,14 @@ bin/cuda: buddhrabrot_cuda.cu
 bin/cuda_info: cuda_info.cu
 	$(MAKE_BIN_DIR)
 	nvcc $(CUDAFLAGS) $< -o $@
+
+# Single Core Mandelbrot
+bin/mandelbrot: mandelbrot.cpp
+	$(MAKE_BIN_DIR)
+	$(CC) $(CFLAGS) $< -o $@
+
+# Multi Core (OpenMP) Mandelbrot
+bin/mandelbrot_omp: mandelbrot.cpp
+	$(MAKE_BIN_DIR)
+	$(CC) $(CFLAGS) -DOMP $< -o $@ $(LFLAGS)
 
