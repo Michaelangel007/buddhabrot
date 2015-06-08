@@ -1,4 +1,5 @@
-/*  Nebulabrot / Buddhabrot generator.
+/*  Buddhabrot
+    https://github.com/Michaelangel007/buddhabrot
     http://en.wikipedia.org/wiki/User_talk:Michael.Pohoreski/Buddhabrot.cpp
 
     Optimized and cleaned up version by Michael Pohoreski
@@ -21,8 +22,6 @@
 // Macros
     #define VERBOSE if(gbVerbose)
 
-    #define reduce(x) (x)       // Macro to reduce greyscale, can use sqrt(n), log(n), etc, or just (n)
-
 // Globals
 
     // Input parameters
@@ -34,7 +33,7 @@
     int       gnMaxDepth         = 1000; // max number of iterations == # of pixels to plot per complex number
     int       gnWidth            = 1024; // image width
     int       gnHeight           =  768; // image height
-    int       gnScale            =   10;
+    int       gnScale            =   10; // not sub-sample, but sub-divide world width / (pixel width * scale)
 
     bool      gbAutoBrightness   = false;
     // Default MaxDepth = 1000 @ 1042x768 has a maximum greyscale intensity = 5010 -> 230/5010 = filter out bottom 4.590808% of image as black
@@ -46,6 +45,7 @@
 
     bool      gbVerbose          = false;
     bool      gbSaveRawGreyscale = true ;
+    bool      gbRotateOutput     = true ;
 
     // Calculated/Cached
     uint32_t  gnImageArea        =    0; // image width * image height
@@ -53,6 +53,9 @@
     // Output
     uint16_t *gpGreyscaleTexels  = NULL; // [ height ][ width ] 16-bit greyscale
     uint8_t  *gpChromaticTexels  = NULL; // [ height ][ width ] 24-bit RGB
+
+    const int BUFFER_BACKSPACE   = 64;
+    char      gaBackspace[ BUFFER_BACKSPACE ];
 
 
 // Timer___________________________________________________________________________ 
@@ -172,15 +175,20 @@
 // ========================================================================
 void AllocImageMemory( const int width, const int height )
 {
-    const size_t nArea           = width * height;
+    gnImageArea = width * height;
 
-    const size_t nGreyscaleBytes = nArea  * sizeof( uint16_t );
-    gpGreyscaleTexels = (uint16_t*) malloc( nGreyscaleBytes );   // 1x 16-bit channel: K
+    const size_t nGreyscaleBytes = gnImageArea  * sizeof( uint16_t );
+    gpGreyscaleTexels = (uint16_t*) malloc( nGreyscaleBytes );          // 1x 16-bit channel: W
     memset( gpGreyscaleTexels, 0, nGreyscaleBytes );
 
-    const size_t chromaticBytes  = nArea * 3 * sizeof( uint8_t ); // 3x 8-bit channels: R,G,B
+    const size_t chromaticBytes  = gnImageArea * 3 * sizeof( uint8_t ); // 3x 8-bit channels: R,G,B
     gpChromaticTexels = (uint8_t*) malloc( chromaticBytes );
     memset( gpChromaticTexels, 0, chromaticBytes );
+
+    for( int i = 0; i < (BUFFER_BACKSPACE-1); i++ )
+        gaBackspace[ i ] = 8; // ASCII backspace
+
+    gaBackspace[ BUFFER_BACKSPACE-1 ] = 0;
 }
 
 
@@ -273,11 +281,44 @@ Image_Greyscale16bitMaxValue( const uint16_t *texels, const int width, const int
 
 
 // ========================================================================
+void
+Image_Greyscale16bitRotateRight( const uint16_t *input, const int width, const int height, uint16_t *output_ )
+{
+    // Source row[y] -> Dest col[ h-y-1 ]
+    //   Source   ->
+    //   0 1 2 4     5 0
+    //   5 6 7 8     6 1
+    //               7 2
+    //               8 4
+
+    // Linearized 1D memory Layout for Source and Dest
+    // [    0*w] [1] [2] .. [1w-1]
+    // [    1*w] ...........[2w-1]
+    // [    2*w] ...........[3w-1]
+    // :                         :
+    // [(h-1)*w] .........  [hw-1]
+
+    for( int y = 0; y < height; y++ )
+    {
+        const uint16_t *pSrc = input   + ((width   ) * y);
+        /* */ uint16_t *pDst = output_ + ((height-1) - y);
+
+        for( int x = 0; x < width; x++ )
+        {
+            *pDst = *pSrc;
+
+             pSrc++;
+             pDst += height;
+        }
+    }
+}
+
+
+// ========================================================================
 uint16_t
 Image_Greyscale16bitToBrightnessBias( int* bias_, float* scaleR_, float* scaleG_, float* scaleB_ )
 {
     uint16_t nMaxBrightness = Image_Greyscale16bitMaxValue( gpGreyscaleTexels, gnWidth, gnHeight );
-    VERBOSE printf( "Max brightness: %d\n", nMaxBrightness );
 
     if( gbAutoBrightness )
     {
@@ -356,7 +397,7 @@ void plot( double wx, double wy, double sx, double sy, uint16_t *texels, const i
     for( int depth = 0; depth < maxdepth; depth++ )
     {
         s = (r*r - i*i) + wx;
-        j = (2*r*i)     + wy;
+        j = (2.0*r*i)   + wy;
 
         r = s;
         i = j;
@@ -367,7 +408,7 @@ void plot( double wx, double wy, double sx, double sy, uint16_t *texels, const i
         u = (int) ((r - gnWorldMinX) * sx); // texel x
         v = (int) ((i - gnWorldMinY) * sy); // texel y
 
-        if( u < width && v < height && u >= 0 && v >= 0 )
+        if( (u < width) && (v < height) && (u >= 0) && (v >= 0) )
             texels[ (v * width) + u ]++;
     }
 }
@@ -384,7 +425,7 @@ int Buddhabrot()
     const int nRow = gnHeight * gnScale ; // scaled height
 
     /* */ int iCel = 0                  ; // Progress status for percent compelete
-    const int nCel = nCol     * nRow    ; // scaled width  * scaled height;
+    const int nCel = nCol     * nRow    ; // scaled width * scaled height;
 
     const double nWorldW = gnWorldMaxX - gnWorldMinX;
     const double nWorldH = gnWorldMaxY - gnWorldMinY;
@@ -398,11 +439,11 @@ int Buddhabrot()
 
     for( int iCol = 0; iCol < nCol; iCol++ )
     {
-        const double x = gnWorldMinX + (dx*iCol);
+        const double x = gnWorldMinX + (iCol * dx);
 
         for( int iRow = 0; iRow < nRow; iRow++ )
         {
-            const double y = gnWorldMinY + (dy*iRow);
+            const double y = gnWorldMinY + (iRow * dy);
 
             iCel++;
 
@@ -427,10 +468,7 @@ int Buddhabrot()
         {
                 const double percent = (100.0 * iCel) / nCel;
 
-                for( int i = 0; i < 40; i++ )
-                    printf( "%c", 8 ); // ASCII backspace
-
-                printf( "%6.2f%% = %d / %d", percent, iCel, nCel );
+                printf( "%6.2f%% = %d / %d%s", percent, iCel, nCel, gaBackspace );
                 fflush( stdout );
         }
     }
@@ -448,7 +486,8 @@ int Usage()
 "\n"
 "-?   Dipslay usage help\n"
 "-b   Use auto brightness\n"
-"-r   Save raw image\n"
+"-r   Rotate output bitmap 90 degrees to look better\n"
+"-raw Don't save raw 16-bit image (defaults to on)\n"
 "-v   Verbose.  Display %% complete\n"
     );
     return 0;
@@ -476,10 +515,13 @@ int main( int nArg, char * aArg[] )
                     gbAutoBrightness = true;
                 else
                 if( *pArg == 'r' )
-                    gbSaveRawGreyscale = true;
+                    gbRotateOutput = true;
                 else
                 if( *pArg == 'v' )
                     gbVerbose = true;
+                else
+                if( strcmp( pArg, "raw" ) == 0 )
+                    gbSaveRawGreyscale = false;
                 else
                     printf( "Unrecognized option: %c\n", *pArg ); 
             }
@@ -494,8 +536,7 @@ int main( int nArg, char * aArg[] )
     if ((iArg+3) < nArg) gnMaxDepth = atoi( aArg[iArg+3] );
     if ((iArg+4) < nArg) gnScale    = atoi( aArg[iArg+4] );
 
-    if( !iArg )
-        printf( "Width: %d  Height: %d  Depth: %d  Scale: %d\n", gnWidth, gnHeight, gnMaxDepth, gnScale );
+    printf( "Width: %d  Height: %d  Depth: %d  Scale: %d  Rotate: %d  SavRaw: %d\n", gnWidth, gnHeight, gnMaxDepth, gnScale, gbRotateOutput, gbSaveRawGreyscale );
 
     AllocImageMemory( gnWidth, gnHeight );
 
@@ -513,16 +554,28 @@ int main( int nArg, char * aArg[] )
 
     VERBOSE printf( "\n" );
     int nMaxBrightness = Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
+    printf( "Max brightness: %d\n", nMaxBrightness );
 
     if( gbSaveRawGreyscale )
     {
-        printf( "Max brightness: %d\n", nMaxBrightness );
-
         char     filenameRAW[ 256 ];
         sprintf( filenameRAW, "raw_cpu1_buddhabrot_%dx%d_%d_%dx.u16.data", gnWidth, gnHeight, gnMaxDepth, gnScale );
 
         RAW_WriteGreyscale16bit( filenameRAW, gpGreyscaleTexels, gnWidth, gnHeight );
         printf( "Saved: %s\n", filenameRAW );
+    }
+
+    
+    uint16_t *pRotatedTexels = gpGreyscaleTexels; // [ height ][ width ] 16-bit greyscale pre-BMP
+    if( gbRotateOutput )
+    {
+        const int nBytes =  gnImageArea * sizeof( uint16_t );
+        pRotatedTexels = (uint16_t*) malloc( nBytes ); // 1x 16-bit channel: W
+        Image_Greyscale16bitRotateRight( gpGreyscaleTexels, gnWidth, gnHeight, pRotatedTexels );
+
+        int t = gnWidth;
+                gnWidth = gnHeight;
+                          gnHeight = t;
     }
 
     char     filenameBMP[256];
@@ -532,7 +585,7 @@ int main( int nArg, char * aArg[] )
     sprintf( filenameBMP, "cpu1_buddhabrot_%dx%d_%d.bmp", gnWidth, gnHeight, gnMaxDepth );
 #endif
 
-    Image_Greyscale16bitToColor24bit( gpGreyscaleTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
+    Image_Greyscale16bitToColor24bit( pRotatedTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
     BMP_WriteColor24bit( filenameBMP, gpChromaticTexels, gnWidth, gnHeight );
     printf( "Saved: %s\n", filenameBMP );
 
