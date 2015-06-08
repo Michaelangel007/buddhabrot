@@ -37,14 +37,14 @@ Using the default 1024x768 with 1,000 depth we can see how much faster paralleli
 
 How depth effects time:
 
-   /bin/omp2    4000 3000 4000
-   /bin/omp2 -v 4000 3000 4000
+       /bin/omp2    4000 3000 4000
+       /bin/omp2 -v 4000 3000 4000
 
-   /bin/omp2    4000 3000 2000   # 637 seconds, 10:37
-   /bin/omp2 -v 4000 3000 2000
+       /bin/omp2    4000 3000 2000   # 637 seconds, 10:37
+       /bin/omp2 -v 4000 3000 2000
 
-   /bin/omp2    4000 3000 1000
-   /bin/omp2 -v 4000 3000 1000
+       /bin/omp2    4000 3000 1000
+       /bin/omp2 -v 4000 3000 1000
 
 = Hardware =
 
@@ -430,17 +430,24 @@ Fortunately the fix is simple:
 
 From:
 
-        if( iTid == 0 )
         if( bDisplayProgress )
+        if( iTid == 0 )
 
 To:
 
-        if( (iTid == 0) && (iCel % gnWidth == 0) )
         if( bDisplayProgress )
+        if( (iTid == 0) && (iCel % gnWidth == 0) )
 
 With output on the i7 we're back down to:
 
         bin/omp2 -v  # 22 seconds, 0:22
+
+However we _still_ have a problem.  For some reason on OSX the progress will "stall" at 12.50%.
+
+In order to have an accurate progress with multi-core we must use an atomic counter.
+
+        #pragma omp atomic
+            iPix++;
 
 Thus we see that there is always a trade-off between raw speed and displaying a progress.
 

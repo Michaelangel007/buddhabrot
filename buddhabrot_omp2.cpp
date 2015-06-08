@@ -109,6 +109,9 @@ Also see:
     uint16_t *gpGreyscaleTexels  = NULL; // [ height ][ width ] 16-bit greyscale
     uint8_t  *gpChromaticTexels  = NULL; // [ height ][ width ] 24-bit RGB
 
+    const int BUFFER_BACKSPACE   = 64;
+    char      gaBackspace[ BUFFER_BACKSPACE ];
+
 // BEGIN OMP
     // The single 16-bit brightness buffer is a shared resource
     // We would incur a major performance penalty via atomic access
@@ -257,6 +260,11 @@ void AllocImageMemory( const int width, const int height )
         memset( gaThreadsTexels[ iThread ], 0,                   nGreyscaleBytes );
     }
 // END OMP
+
+    for( int i = 0; i < (BUFFER_BACKSPACE-1); i++ )
+        gaBackspace[ i ] = 8; // ASCII backspace
+
+    gaBackspace[ BUFFER_BACKSPACE-1 ] = 0;
 }
 
 
@@ -459,6 +467,7 @@ int Buddhabrot()
     const int nCol = gnWidth  * gnScale ; // scaled width
     const int nRow = gnHeight * gnScale ; // scaled height
 
+    /* */ int iCel = 0                  ; // Progress status for percent compelete
     const int nCel = nCol     * nRow    ; // scaled width  * scaled height;
 
     const double nWorldW = gnWorldMaxX - gnWorldMinX;
@@ -477,9 +486,12 @@ int Buddhabrot()
 // BEGIN OMP
 #pragma omp parallel for
 // END OMP
-    for( int iCel = 0; iCel < nCel; iCel++ )
+    for( int iPix = 0; iPix < nCel; iPix++ )
     {
 // BEGIN OMP
+#pragma omp atomic
+        iCel++;
+
         const int       iTid = omp_get_thread_num(); // Get Thread Index: 0 .. nCores-1
         /* */ uint16_t* pTex = gaThreadsTexels[ iTid ];
 // END OMP
@@ -509,7 +521,7 @@ int Buddhabrot()
 
         VERBOSE
 // BEGIN OMP
-        if( (iTid == 0) && (iCel % gnWidth == 0) )
+        if (iTid == 0)
 // END OMP
         {
             // We no longer need a critical section
@@ -517,10 +529,7 @@ int Buddhabrot()
             {
                 const double percent = (100.0  * iCel) / nCel;
 
-                for( int i = 0; i < 40; i++ )
-                    printf( "%c", 8 ); // ASCII backspace
-
-                printf( "%6.2f%% = %d / %d", percent, iCel, nCel );
+                printf( "%6.2f%% = %d / %d%s", percent, iCel, nCel, gaBackspace );
                 fflush( stdout );
             }
         }
