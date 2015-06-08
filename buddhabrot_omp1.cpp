@@ -109,6 +109,9 @@ Also see:
     uint16_t *gpGreyscaleTexels  = NULL; // [ height ][ width ] 16-bit greyscale
     uint8_t  *gpChromaticTexels  = NULL; // [ height ][ width ] 24-bit RGB
 
+    const int BUFFER_BACKSPACE   = 64;
+    char      gaBackspace[ BUFFER_BACKSPACE ];
+
 // BEGIN OMP
     // The single 16-bit brightness buffer is a shared resource
     // We would incur a major performance penalty via atomic access
@@ -257,6 +260,11 @@ void AllocImageMemory( const int width, const int height )
         memset( gaThreadsTexels[ iThread ], 0,                   nGreyscaleBytes );
     }
 // END OMP
+
+    for( int i = 0; i < (BUFFER_BACKSPACE-1); i++ )
+        gaBackspace[ i ] = 8; // ASCII backspace
+
+    gaBackspace[ BUFFER_BACKSPACE-1 ] = 0;
 }
 
 
@@ -459,6 +467,7 @@ int Buddhabrot()
     const int nCol = gnWidth  * gnScale ; // scaled width
     const int nRow = gnHeight * gnScale ; // scaled height
 
+    /* */ int iCel = 0                  ; // Progress status for percent compelete
     const int nCel = nCol     * nRow    ; // scaled width  * scaled height;
 
     const double nWorldW = gnWorldMaxX - gnWorldMinX;
@@ -474,7 +483,6 @@ int Buddhabrot()
     // 1. Scatter
 
 // BEGIN OMP
-    /* */ int iCel = 0                  ; // Progress status for percent compelete
 #pragma omp parallel for
 // END OMP
     for( int iCol = 0; iCol < nCol; iCol++ )
@@ -521,10 +529,7 @@ int Buddhabrot()
 // END OMP
                 const double percent = (100.0  * iCel) / nCel;
 
-                for( int i = 0; i < 40; i++ )
-                    printf( "%c", 8 ); // ASCII backspace
-
-                printf( "%6.2f%% = %d / %d", percent, iCel, nCel );
+                printf( "%6.2f%% = %d / %d%s", percent, iCel, nCel, gaBackspace );
                 fflush( stdout );
             }
         }
