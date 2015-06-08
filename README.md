@@ -24,7 +24,7 @@ This 2,880x2,160 at 32,768 depth [image](https://github.com/Michaelangel007/budd
 
  On Linux or OSX type: `make` The makefile will detect the OS and use the right flags.
 
- For Windows, Microsoft^TM Visual Studio Solution and Project will be provided soon.
+ For Windows, the Microsoft Visual Studio Solution and Project will be provided soon.
 
 
 # Benchmarks (min:sec) (Lower is Better)
