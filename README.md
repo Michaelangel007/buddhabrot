@@ -6,7 +6,7 @@ This 2,160x2,880 at 32,768 depth [image](https://github.com/Michaelangel007/budd
 
 Here is a "thumbnail" at 1/2 size: 1080x1440
 
-<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/data/buddhabrot_1080x1440_32768.png"
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/data/buddhabrot_1080x1440_32768.png">
 
 # Status
 
