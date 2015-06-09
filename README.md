@@ -21,13 +21,13 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 * Multi-core CUDA -- not yet started
 * Multi-core OpenCL -- not yet started
 
-| Type            | Linux | OSX  | Windows | Filename         |
-|-----------------|-------|------|---------|------------------|
-| Single threaded | Done  | Done | TODO    | `bin/buddhabrot` |
-| OpenMP          | Done  | Done | TODO    | `bin/omp2`       |
-| C++14           | <span style="background-color:#ff0;">TODO</span> | TODO | TODO    | `bin/c14`        |
-| CUDA            | <span style="background-color:#ff0;">TODO</span> | TODO | TODO    | `bin/cuda`       |
-| OpenCL          | <span style="background-color:#ff0;">TODO</span> | TODO | TODO    | `bin/ocl`        |
+| Type            | Linux    | OSX      | Windows | Filename         |
+|-----------------|----------|----------|---------|------------------|
+| Single threaded | **Done** | **Done** | TODO    | `bin/buddhabrot` |
+| OpenMP          | **Done** | **Done** | TODO    | `bin/omp2`       |
+| C++14           | TODO     | TODO     | TODO    | `bin/c14`        |
+| CUDA            | TODO     | TODO     | TODO    | `bin/cuda`       |
+| OpenCL          | TODO     | TODO     | TODO    | `bin/ocl`        |
 
 # Compiling
 
