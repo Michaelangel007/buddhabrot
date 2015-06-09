@@ -1,6 +1,6 @@
 # Buddhabrot
 
-Single threaded (CPU), multi-threaded OpenMP (CPU), multi-threaded C++14 (CPU), multi-core using CUDA (GPU) {forthcoming}, and multi-core using OpenCL {forthcoming}, versions of [Buddhabrot](http://en.wikipedia.org/wiki/Buddhabrot)
+Single threaded (CPU), multi-threaded OpenMP (CPU), multi-threaded C++14 (CPU) {forthcoming}, multi-core using CUDA (GPU) {forthcoming}, and multi-core using OpenCL {forthcoming}, versions of [Buddhabrot](http://en.wikipedia.org/wiki/Buddhabrot)
 
 This 2,160x2,880 at 32,768 depth [image](https://github.com/Michaelangel007/buddhabrot/blob/master/data/buddhabrot_2160x2880_32768.bmp) took 42 minutes on an i7 utilizing all 8 cores.
 
