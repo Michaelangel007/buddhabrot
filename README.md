@@ -16,7 +16,7 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 = TODO =
 
-* MSVC solution and project
+* MSVC solution and project -- not yet started
 * Multi-threaded C++14 -- not yet started
 * Multi-core CUDA -- not yet started
 * Multi-core OpenCL -- not yet started
@@ -25,9 +25,9 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 |-----------------|-------|------|---------|------------------|
 | Single threaded | Done  | Done | TODO    | `bin/buddhabrot` |
 | OpenMP          | Done  | Done | TODO    | `bin/omp2`       |
-| C++14           | <span bgcolor="#FF0">TODO</span>  | TODO | TODO    | `bin/c14`        |
-| CUDA            | TODO  | TODO | TODO    | `bin/cuda`       |
-| OpenCL          | TODO  | TODO | TODO    | `bin/ocl`        |
+| C++14           | <span style="background-color:#ff0;">TODO</span> | TODO | TODO    | `bin/c14`        |
+| CUDA            | <span style="background-color:#ff0;">TODO</span> | TODO | TODO    | `bin/cuda`       |
+| OpenCL          | <span style="background-color:#ff0;">TODO</span> | TODO | TODO    | `bin/ocl`        |
 
 # Compiling
 
