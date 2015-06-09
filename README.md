@@ -21,15 +21,13 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 * Multi-core CUDA -- not yet started
 * Multi-core OpenCL -- not yet started
 
-                         +-------+------+---------+----------------+
-                         | Linux | OSX  | Windows | Filename       |
-        +----------------+-------+------+---------+----------------+
-        | Single threaded| Done  | Done | TODO    | bin/buddhabrot |
-        | OpenMP         | Done  | Done | TODO    | bin/omp2       |
-        | C++14          | TODO  | TODO | TODO    | bin/c14        |
-        | CUDA           | TODO  | TODO | TODO    | bin/cuda       |
-        | OpenCL         | TODO  | TODO | TODO    | bin/ocl        |
-        +----------------+-------+------+---------+----------------+
+| Type            | Linux | OSX  | Windows | Filename         |
+|-----------------|-------|------|---------|------------------|
+| Single threaded | Done  | Done | TODO    | `bin/buddhabrot` |
+| OpenMP          | Done  | Done | TODO    | `bin/omp2`       |
+| C++14           | <span bgcolor="#FF0">TODO</span>  | TODO | TODO    | `bin/c14`        |
+| CUDA            | TODO  | TODO | TODO    | `bin/cuda`       |
+| OpenCL          | TODO  | TODO | TODO    | `bin/ocl`        |
 
 # Compiling
 
@@ -51,10 +49,10 @@ To run the multi-threaded version `bin/omp3`
 
 Using the default 1,024 x 768 at 1,000 depth we can see how much faster parallelizing the code can be:
 
-    | Hardware           | org. | cpu1 | omp1 | omp2 | omp3 | cuda | ocl |
-    |--------------------|------|------|------|------|------|------|-----|
-    | Intel i7 @ 2.6 GHz | 0:57 | 0:55 | 0:22 | 0:17 | 0:10 | n/a  | n/a |
-    | AMD 955BE@ 3.5 GHz | 1:37 | 1:29 | 1:00 | 0:42 | 0:30 | n/a  | n/a |
+| Hardware           | org. | cpu1 | omp1 | omp2 | omp3 | cuda | ocl |
+|--------------------|------|------|------|------|------|------|-----|
+| Intel i7 @ 2.6 GHz | 0:57 | 0:55 | 0:22 | 0:17 | 0:10 | n/a  | n/a |
+| AMD 955BE@ 3.5 GHz | 1:37 | 1:29 | 1:00 | 0:42 | 0:30 | n/a  | n/a |
 
                                     (min:sec) (Lower is better)
 
@@ -74,37 +72,37 @@ Using the default 1,024 x 768 at 1,000 depth we can see how much faster parallel
 
 Details on hardware used for building and testing:
 
-    | CPU                 | Clock    | OS                      | RAM                 | GPU       | Cores |
-    |---------------------|----------|-------------------------|---------------------|-----------|-------|
-    | Intel i7-4770K      | 4040 MHz | Windows 7 Pro           | 32 GB DDR3 1600 Mhz | GTX 980Ti |  2880 |
-    | Intel i7            | 2600 MHz | OSX 10.9                | 16 GB DDR3 1600 MHz | GT 750M   |   384 |
-    | AMD Phenom II 955BE | 3500 MHz | Linux, Ubuntu 12.04 LTS | 16 GB DDR3 1333 MHz | GTX Titan |  2688 |
+| CPU                 | Clock    | OS                      | RAM                 | GPU       | Cores |
+|---------------------|----------|-------------------------|---------------------|-----------|-------|
+| Intel i7-4770K      | 4040 MHz | Windows 7 Pro           | 32 GB DDR3 1600 Mhz | GTX 980Ti |  2880 |
+| Intel i7            | 2600 MHz | OSX 10.9                | 16 GB DDR3 1600 MHz | GT 750M   |   384 |
+| AMD Phenom II 955BE | 3500 MHz | Linux, Ubuntu 12.04 LTS | 16 GB DDR3 1333 MHz | GTX Titan |  2688 |
 
 ## = Threads =
 
 Using the shell script `jobs.sh` we can see how the numbers of threads effects time for `bin/omp3` on the AMD system:
 
-    | Command line   | # | Time |
-    |----------------|---|------|
-    | `bin/omp3 -j1` | 1 | 1:31 |
-    | `bin/omp3 -j2` | 2 | 0:47 |
-    | `bin/omp3 -j3` | 3 | 0:33 |
-    | `bin/omp3 -j4` | 4 | 0:30 |
+| Command line   | # | Time |
+|----------------|---|------|
+| `bin/omp3 -j1` | 1 | 1:31 |
+| `bin/omp3 -j2` | 2 | 0:47 |
+| `bin/omp3 -j3` | 3 | 0:33 |
+| `bin/omp3 -j4` | 4 | 0:30 |
 
 ## = Depth =
 
 Using the shell script `depth.sh` we can see how depth effects time on the AMD box:
 
-    | Command line                 | Time  |
-    |------------------------------|-------|
-    | `bin/omp2    4000 3000 4000` | ??:?? |
-    | `bin/omp2 -v 4000 3000 4000` | ??:?? |
-    | `bin/omp2    4000 3000 3000` | ??:?? |
-    | `bin/omp2 -v 4000 3000 3000` | ??:?? |
-    | `bin/omp2    4000 3000 2000` | ??:?? |
-    | `bin/omp2 -v 4000 3000 2000` | ??:?? |
-    | `bin/omp2    4000 3000 1000` | ??:?? |
-    | `bin/omp2 -v 4000 3000 1000` | ??:?? |
+| Command line                 | Time  |
+|------------------------------|-------|
+| `bin/omp2    4000 3000 4000` | ??:?? |
+| `bin/omp2 -v 4000 3000 4000` | ??:?? |
+| `bin/omp2    4000 3000 3000` | ??:?? |
+| `bin/omp2 -v 4000 3000 3000` | ??:?? |
+| `bin/omp2    4000 3000 2000` | ??:?? |
+| `bin/omp2 -v 4000 3000 2000` | ??:?? |
+| `bin/omp2    4000 3000 1000` | ??:?? |
+| `bin/omp2 -v 4000 3000 1000` | ??:?? |
 
        /bin/omp2    4000 3000 2000   # 637 seconds, 10:37
 
