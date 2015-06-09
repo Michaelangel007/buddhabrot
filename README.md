@@ -44,6 +44,10 @@ To run the single threaded version `bin/buddhabrot`
 
 To run the multi-threaded version `bin/omp3`
 
+One can specify a custom resolution. If you change specify the width and height it is highly recommended you keep the aspect ratio of 4:3. e.g. `bin/omp3 4000 3000`
+
+The raw data will be 4,000 x 3,000.  The generated BMP will be rotated 90 degrees so the Buddhabrot appears in the "standard form" at 3,000 x 4,000.
+
 
 # Benchmarks
 
