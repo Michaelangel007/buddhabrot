@@ -1,7 +1,7 @@
 # https://github.com/Michaelangel007/buddhabrot
 
 all: bin/buddhabrot \
-     bin/omp1 bin/omp2 bin/omp3 bin/omp4 \
+     bin/omp1 bin/omp2 bin/omp3 bin/omp3float \
      bin/evercat bin/raw2bmp bin/mandelbrot bin/mandelbrot_omp \
      bin/text_mandelbrot bin/text_buddhabrot
 
@@ -96,7 +96,7 @@ bin/omp3: buddhabrot_omp3.cpp
 	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 
 # Multi Core (OpenMP) Float
-bin/omp4: buddhabrot_omp4.cpp
+bin/omp3float: buddhabrot_omp3float.cpp
 	$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 

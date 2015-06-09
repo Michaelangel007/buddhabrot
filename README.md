@@ -1052,7 +1052,7 @@ Thus we see that there is always a trade-off between raw speed and displaying a 
 
 Since we are using `doubles` what would happen if we used `floats`?
 
-File: `buddhabrot_omp4.cpp`
+File: `buddhabrot_omp3float.cpp`
 
 Luckily Modern CPU's don't have a float64 penalty compared to float32.  When we run this on the GPU we'll revisit this difference. i.e. Modern GPU float:double performance can be as little as 1:3 in high end graphics cards such as the original nVidia GTX Titan, or as high as 1:24 in "gaming" graphics cards such as the nVidia GTX 980.
 
