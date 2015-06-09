@@ -15,6 +15,7 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 = TODO =
 
+* Add `-j#` to use max # of threads
 * MSVC solution and project
 * Multi core (CUDA) - not yet started
 * Multi core (OpenCL) - not yet started
@@ -42,7 +43,7 @@ To run the single threaded version `bin/buddhabrot`
 To run the multi-threaded version `bin/omp3`
 
 
-# Benchmarks (min:sec) (Lower is Better)
+# Benchmarks
 
 Using the default 1024x768 at 1,000 depth we can see how much faster parallelizing the code can be:
 
@@ -52,6 +53,8 @@ Using the default 1024x768 at 1,000 depth we can see how much faster parallelizi
         | Intel i7 @ 2.6 GHz | 0:57 | 0:55 | 0:22 | 0:17 | 0:10 | n/a  | n/a |
         | AMD 955BE@ 3.5 GHz | 1:37 | 1:29 | 0:59 | 0:42 | 0:28 | n/a  | n/a |
         +--------------------+------+------+------+------+------+------+-----+
+        (min:sec) (Lower is better)
+
 
 = Legend: =
 

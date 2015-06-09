@@ -391,7 +391,7 @@ inline
 void plot( double wx, double wy, double sx, double sy, uint16_t *texels, const int width, const int height, const int maxdepth )
 {
     double  r = 0., i = 0.; // Zn   current Complex< real, imaginary >
-    double  s    , j      ; // Zn+1 next    Complex< real, imaginary >
+    double  s     , j     ; // Zn+1 next    Complex< real, imaginary >
     int     u     , v     ; // texel coords
 
     for( int depth = 0; depth < maxdepth; depth++ )
@@ -486,8 +486,8 @@ int Usage()
 "\n"
 "-?   Dipslay usage help\n"
 "-b   Use auto brightness\n"
-"-r   Rotate output bitmap 90 degrees to look better\n"
-"-raw Don't save raw 16-bit image (defaults to on)\n"
+"-r   Don't rotate output bitmap 90 degrees right (Defaults to ON)\n"
+"-raw Don't save raw 16-bit image (Defaults to ON)\n"
 "-v   Verbose.  Display %% complete\n"
     );
     return 0;
@@ -515,7 +515,7 @@ int main( int nArg, char * aArg[] )
                     gbAutoBrightness = true;
                 else
                 if( *pArg == 'r' )
-                    gbRotateOutput = true;
+                    gbRotateOutput = false;
                 else
                 if( *pArg == 'v' )
                     gbVerbose = true;
