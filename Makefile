@@ -17,7 +17,7 @@ cuda: bin/cuda bin/cuda_info
 # http://stackoverflow.com/questions/6038040/printing-variable-from-within-makefile
 
 ifeq ($(OS),Windows_NT)
-  $(info "OS: Windows detected...");
+  $(info "Make OS: Windows detected...");
   CFLAGS += -DOS_WIN
   RM := del /q
 else
@@ -28,14 +28,14 @@ else
   RM := rm
   ifeq ($(OS),Linux) # Various distributions
     # Using $(info ...text...) since @echo doesn't work
-    $(info OS: Linux detected...)
+    $(info Make OS: Linux detected...)
     CC     := g++
     CFLAGS += -DOS_LINUX
     CORES  := $(shell grep -c ^processor /proc/cpuinfo)
-    $(info Cores: $(CORES))
+    $(info Make cores: $(CORES))
   endif
   ifeq ($(OS),Darwin) # OSX
-    $(info "OS: OSX detected...")
+    $(info Make OS: OSX detected...)
     CFLAGS += -DOS_OSX
     # LLVM resed in /usr/bin/g++
     # custom GCC in /usr/local/bin/g++
@@ -45,9 +45,12 @@ endif
 
 
 MAKE_BIN_DIR=mkdir -p bin
+
+LIB_OMP=-fopenmp
+
 # You may need to link with the the Standard C++ libary
 #    -lstdc++
-LFLAGS=-fopenmp
+LFLAGS=
 
 CUDAFLAGS=-O2
 
@@ -80,22 +83,22 @@ bin/buddhabrot: buddhabrot.cpp
 # Multi Core (OpenMP) Fast - First version - parallel outer loop
 bin/omp1: buddhabrot_omp1.cpp
 	$(MAKE_BIN_DIR)
-	$(CC) $(CFLAGS) $< -o $@ $(LFLAGS)
+	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 
 # Multi Core (OpenMP) Faster - Second version - parallel outer and inner loop -> linearized
 bin/omp2: buddhabrot_omp2.cpp
 	$(MAKE_BIN_DIR)
-	$(CC) $(CFLAGS) $< -o $@ $(LFLAGS)
+	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 
 # Multi Core (OpenMP) Fastest - Third version - parallel outer and inner loop -> linearized
 bin/omp3: buddhabrot_omp3.cpp
 	$(MAKE_BIN_DIR)
-	$(CC) $(CFLAGS) $< -o $@ $(LFLAGS)
+	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 
 # Multi Core (OpenMP) Float
 bin/omp4: buddhabrot_omp4.cpp
 	$(MAKE_BIN_DIR)
-	$(CC) $(CFLAGS) $< -o $@ $(LFLAGS)
+	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 
 # Utility
 bin/raw2bmp: raw2bmp.cpp
@@ -120,5 +123,5 @@ bin/mandelbrot: mandelbrot.cpp
 # Multi Core (OpenMP) Mandelbrot
 bin/mandelbrot_omp: mandelbrot.cpp
 	$(MAKE_BIN_DIR)
-	$(CC) $(CFLAGS) -DOMP $< -o $@ $(LFLAGS)
+	$(CC) $(CFLAGS) -DOMP $< -o $@ $(LIB_OMP)
 

@@ -1,4 +1,4 @@
-/*  Buddhabrot generator
+/*  Buddhabrot
     https://github.com/Michaelangel007/buddhabrot
     http://en.wikipedia.org/wiki/User_talk:Michael.Pohoreski/Buddhabrot.cpp
 
@@ -79,8 +79,6 @@ Also see:
 // Macros
     #define VERBOSE if(gbVerbose)
 
-    #define reduce(x) (x)       // Macro to reduce greyscale, can use sqrt(n), log(n), etc, or just (n)
-
 // Globals
 
     // Input parameters
@@ -92,7 +90,7 @@ Also see:
     int       gnMaxDepth         = 1000; // max number of iterations == # of pixels to plot per complex number
     int       gnWidth            = 1024; // image width
     int       gnHeight           =  768; // image height
-    int       gnScale            =   10;
+    int       gnScale            =   10; // not sub-sample, but sub-divide world width / (pixel width * scale)
 
     bool      gbAutoBrightness   = false;
     // Default MaxDepth = 1000 @ 1042x768 has a maximum greyscale intensity = 5010 -> 230/5010 = filter out bottom 4.590808% of image as black
@@ -103,7 +101,11 @@ Also see:
     float     gnScaleB           = 0.18; // Default: (5010 - 230) * 0.18 = 860.4
 
     bool      gbVerbose          = false;
-    bool      gbSaveRawGreyscale = true ; // Default to yes for OpenMP
+    bool      gbSaveRawGreyscale = true ;
+    bool      gbRotateOutput     = true ;
+
+    // Calculated/Cached
+    uint32_t  gnImageArea        =    0; // image width * image height
 
     // Output
     uint16_t *gpGreyscaleTexels  = NULL; // [ height ][ width ] 16-bit greyscale
@@ -118,7 +120,8 @@ Also see:
     // to keep it in sync amongst the various threads
     // Instead, we give each thread its own indepent copy
     // Afterwards, we will merge (add) all copies back into a single brightness buffer
-    int       gnThreads = 1;
+    int       gnThreadsMaximum = 0 ;
+    int       gnThreadsActive  = 0 ; // 0 = auto detect; > 0 manual # of threads
     uint16_t *gaThreadsTexels[ 16 ]; // Max 16-cores
 // END OMP
 
@@ -240,31 +243,33 @@ Also see:
 // ========================================================================
 void AllocImageMemory( const int width, const int height )
 {
-    const size_t nArea           = width * height;
+    gnImageArea = width * height;
 
-    const size_t nGreyscaleBytes = nArea  * sizeof( uint16_t );
-    gpGreyscaleTexels = (uint16_t*) malloc( nGreyscaleBytes );   // 1x 16-bit channel: K
+    const size_t nGreyscaleBytes = gnImageArea  * sizeof( uint16_t );
+    gpGreyscaleTexels = (uint16_t*) malloc( nGreyscaleBytes );          // 1x 16-bit channel: W
     memset( gpGreyscaleTexels, 0, nGreyscaleBytes );
 
-    const size_t chromaticBytes  = nArea * 3 * sizeof( uint8_t ); // 3x 8-bit channels: R,G,B
+    const size_t chromaticBytes  = gnImageArea * 3 * sizeof( uint8_t ); // 3x 8-bit channels: R,G,B
     gpChromaticTexels = (uint8_t*) malloc( chromaticBytes );
     memset( gpChromaticTexels, 0, chromaticBytes );
-
-// BEGIN OMP
-    gnThreads = omp_get_num_procs();
-    printf( "Detected: %d cores\n", gnThreads );
-
-    for( int iThread = 0; iThread < gnThreads; iThread++ )
-    {
-                gaThreadsTexels[ iThread ] = (uint16_t*) malloc( nGreyscaleBytes );
-        memset( gaThreadsTexels[ iThread ], 0,                   nGreyscaleBytes );
-    }
-// END OMP
 
     for( int i = 0; i < (BUFFER_BACKSPACE-1); i++ )
         gaBackspace[ i ] = 8; // ASCII backspace
 
     gaBackspace[ BUFFER_BACKSPACE-1 ] = 0;
+
+// BEGIN OMP
+    if(!gnThreadsActive) // user didn't specify how many threads to use, default to all of them
+        gnThreadsActive = gnThreadsMaximum;
+    else
+        omp_set_num_threads( gnThreadsActive );
+
+    for( int iThread = 0; iThread < gnThreadsActive; iThread++ )
+    {
+                gaThreadsTexels[ iThread ] = (uint16_t*) malloc( nGreyscaleBytes );
+        memset( gaThreadsTexels[ iThread ], 0,                   nGreyscaleBytes );
+    }
+// END OMP
 }
 
 
@@ -357,11 +362,44 @@ Image_Greyscale16bitMaxValue( const uint16_t *texels, const int width, const int
 
 
 // ========================================================================
+void
+Image_Greyscale16bitRotateRight( const uint16_t *input, const int width, const int height, uint16_t *output_ )
+{
+    // Source row[y] -> Dest col[ h-y-1 ]
+    //   Source   ->
+    //   0 1 2 4     5 0
+    //   5 6 7 8     6 1
+    //               7 2
+    //               8 4
+
+    // Linearized 1D memory Layout for Source and Dest
+    // [    0*w] [1] [2] .. [1w-1]
+    // [    1*w] ...........[2w-1]
+    // [    2*w] ...........[3w-1]
+    // :                         :
+    // [(h-1)*w] .........  [hw-1]
+
+    for( int y = 0; y < height; y++ )
+    {
+        const uint16_t *pSrc = input   + ((width   ) * y);
+        /* */ uint16_t *pDst = output_ + ((height-1) - y);
+
+        for( int x = 0; x < width; x++ )
+        {
+            *pDst = *pSrc;
+
+             pSrc++;
+             pDst += height;
+        }
+    }
+}
+
+
+// ========================================================================
 uint16_t
 Image_Greyscale16bitToBrightnessBias( int* bias_, float* scaleR_, float* scaleG_, float* scaleB_ )
 {
     uint16_t nMaxBrightness = Image_Greyscale16bitMaxValue( gpGreyscaleTexels, gnWidth, gnHeight );
-    VERBOSE printf( "Max brightness: %d\n", nMaxBrightness );
 
     if( gbAutoBrightness )
     {
@@ -434,7 +472,7 @@ inline
 void plot( double wx, double wy, double sx, double sy, uint16_t *texels, const int width, const int height, const int maxdepth )
 {
     double  r = 0., i = 0.; // Zn   current Complex< real, imaginary >
-    double  s    , j      ; // Zn+1 next    Complex< real, imaginary >
+    double  s     , j     ; // Zn+1 next    Complex< real, imaginary >
     int     u     , v     ; // texel coords
 
     for( int depth = 0; depth < maxdepth; depth++ )
@@ -451,7 +489,7 @@ void plot( double wx, double wy, double sx, double sy, uint16_t *texels, const i
         u = (int) ((r - gnWorldMinX) * sx); // texel x
         v = (int) ((i - gnWorldMinY) * sy); // texel y
 
-        if( u < width && v < height && u >= 0 && v >= 0 )
+        if( (u < width) && (v < height) && (u >= 0) && (v >= 0) )
             texels[ (v * width) + u ]++;
     }
 }
@@ -480,10 +518,10 @@ int Buddhabrot()
     const double dx = nWorldW / (nCol - 1.0);
     const double dy = nWorldH / (nRow - 1.0);
 
+// BEGIN OMP
     // 1. Scatter
 
     // Linearize to 1D
-// BEGIN OMP
 #pragma omp parallel for
 // END OMP
     for( int iPix = 0; iPix < nCel; iPix++ )
@@ -527,7 +565,7 @@ int Buddhabrot()
             // We no longer need a critical section
             // since we only allow thread 0 to print
             {
-                const double percent = (100.0  * iCel) / nCel;
+                const double percent = (100.0 * iCel) / nCel;
 
                 printf( "%6.2f%% = %d / %d%s", percent, iCel, nCel, gaBackspace );
                 fflush( stdout );
@@ -538,7 +576,7 @@ int Buddhabrot()
 // BEGIN OMP
     // 2. Gather
     const int nPix = gnWidth  * gnHeight; // Normal area
-    for( int iThread = 0; iThread < gnThreads; iThread++ )
+    for( int iThread = 0; iThread < gnThreadsActive; iThread++ )
     {
         const uint16_t *pSrc = gaThreadsTexels[ iThread ];
         /* */ uint16_t *pDst = gpGreyscaleTexels;
@@ -555,15 +593,32 @@ int Buddhabrot()
 // ========================================================================
 int Usage()
 {
+    const char *aOffOn[2] =
+    {
+         "OFF"
+        ,"ON "
+    };
+
     printf(
-"Buddhabrot (OMP) v1.11 by Michael Pohoreski\n"
-"Usage: [width height depth]\n"
+"Buddhabrot (OMP) by Michael Pohoreski\n"
+"https://github.com/Michaelangel007/buddhabrot\n"
+"Usage: [width [height [depth [scale]]]]\n"
 "\n"
-"-?   Dipslay usage help\n"
+"-?   Display usage help\n"
 "-b   Use auto brightness\n"
-"-r   Save raw image\n"
+// BEGIN OMP
+"-j#  Use this # of threads. (Default: %d)\n"
+// END OMP
+"-r   Turn %s rotation of output bitmap 90 degrees right\n"
+"-raw Turn %s saving raw 16-bit image\n"
 "-v   Verbose.  Display %% complete\n"
+// BEGIN OMP
+        , gnThreadsMaximum
+// END OMP
+        , aOffOn[ (int) !gbRotateOutput     ]
+        , aOffOn[ (int) !gbSaveRawGreyscale ]
     );
+
     return 0;
 }
 
@@ -571,28 +626,48 @@ int Usage()
 // ========================================================================
 int main( int nArg, char * aArg[] )
 {
+// BEGIN OMP
+    gnThreadsMaximum = omp_get_num_procs();
+// END OMP
+
     int   iArg = 0;
-    char *pArg;
 
     if( nArg > 1 )
     {
         while( iArg < nArg )
         {
-            if( aArg[iArg+1] && aArg[iArg+1][0] == '-' )
+            char *pArg = aArg[ iArg + 1 ];
+            if(  !pArg )
+                break;
+
+            if( pArg[0] == '-' )
             {
                 iArg++;
-                pArg = &aArg[ iArg ][1]; // point to 1st char in option
+                pArg++; // point to 1st char in option
+
                 if( *pArg == '?' )
                     return Usage();
                 else
                 if( *pArg == 'b' )
                     gbAutoBrightness = true;
                 else
-                if( *pArg == 'r' )
-                    gbSaveRawGreyscale = true;
+// BEGIN OMP
+                if( *pArg == 'j' )
+                {
+                    int i = atoi( pArg+1 ); 
+                    if( i > 0 )
+                        gnThreadsActive = i;
+                }
+                else
+// END OMP
+                if( *pArg == 'r' && (strcmp( pArg, "raw") != 0)) // -r and -raw
+                    gbRotateOutput = false;
                 else
                 if( *pArg == 'v' )
                     gbVerbose = true;
+                else
+                if( strcmp( pArg, "raw" ) == 0 )
+                    gbSaveRawGreyscale = false;
                 else
                     printf( "Unrecognized option: %c\n", *pArg ); 
             }
@@ -600,17 +675,20 @@ int main( int nArg, char * aArg[] )
                 break;
         }
     }
-    // iArg is index to first non-flag
 
+    // iArg is index to first non-flag
     if ((iArg+1) < nArg) gnWidth    = atoi( aArg[iArg+1] );
     if ((iArg+2) < nArg) gnHeight   = atoi( aArg[iArg+2] );
     if ((iArg+3) < nArg) gnMaxDepth = atoi( aArg[iArg+3] );
     if ((iArg+4) < nArg) gnScale    = atoi( aArg[iArg+4] );
 
-    //if( !iArg )
-        printf( "Width: %d  Height: %d  Depth: %d  Scale: %d\n", gnWidth, gnHeight, gnMaxDepth, gnScale );
+    printf( "Width: %d  Height: %d  Depth: %d  Scale: %d  RotateBMP: %d  SaveRaw: %d\n", gnWidth, gnHeight, gnMaxDepth, gnScale, gbRotateOutput, gbSaveRawGreyscale );
 
     AllocImageMemory( gnWidth, gnHeight );
+
+// BEGIN OMP
+    printf( "Using: %d / %d cores\n", gnThreadsActive, gnThreadsMaximum );
+// ENDMP
 
     Timer stopwatch;
     stopwatch.Start();
@@ -626,26 +704,40 @@ int main( int nArg, char * aArg[] )
 
     VERBOSE printf( "\n" );
     int nMaxBrightness = Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
+    printf( "Max brightness: %d\n", nMaxBrightness );
+
+    const char *pBaseName = "omp3_buddhabrot";
 
     if( gbSaveRawGreyscale )
     {
-        printf( "Max brightness: %d\n", nMaxBrightness );
-
         char     filenameRAW[ 256 ];
-        sprintf( filenameRAW, "raw_omp3_buddhabrot_%dx%d_%d_%dx.u16.data", gnWidth, gnHeight, gnMaxDepth, gnScale );
+        sprintf( filenameRAW, "raw_%s_%dx%d_%d_%dx.u16.data", pBaseName, gnWidth, gnHeight, gnMaxDepth, gnScale );
 
         RAW_WriteGreyscale16bit( filenameRAW, gpGreyscaleTexels, gnWidth, gnHeight );
         printf( "Saved: %s\n", filenameRAW );
     }
 
+    uint16_t *pRotatedTexels = gpGreyscaleTexels; // [ height ][ width ] 16-bit greyscale pre-BMP
+    if( gbRotateOutput )
+    {
+        const int nBytes =  gnImageArea * sizeof( uint16_t );
+        pRotatedTexels = (uint16_t*) malloc( nBytes ); // 1x 16-bit channel: W
+        Image_Greyscale16bitRotateRight( gpGreyscaleTexels, gnWidth, gnHeight, pRotatedTexels );
+
+        int t = gnWidth;
+                gnWidth = gnHeight;
+                          gnHeight = t;
+    }
+
     char     filenameBMP[256];
 #if DEBUG
-    sprintf( filenameBMP, "omp3_buddhabrot_%dx%d_depth_%d_colorscaling_%d_scale_%dx.bmp", gnWidth, gnHeight, gnMaxDepth, (int)gbAutoBrightness, gnScale );
+    sprintf( filenameBMP, "%s_%dx%d_depth_%d_maxbright_%d_autobright_%d_scale_%dx.bmp"
+       , pBaseName, gnWidth, gnHeight, gnMaxDepth, nMaxBrightness (int)gbAutoBrightness, gnScale );
 #else
-    sprintf( filenameBMP, "omp3_buddhabrot_%dx%d_%d.bmp", gnWidth, gnHeight, gnMaxDepth );
+    sprintf( filenameBMP, "%s_%dx%d_%d.bmp", pBaseName, gnWidth, gnHeight, gnMaxDepth );
 #endif
 
-    Image_Greyscale16bitToColor24bit( gpGreyscaleTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
+    Image_Greyscale16bitToColor24bit( pRotatedTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
     BMP_WriteColor24bit( filenameBMP, gpChromaticTexels, gnWidth, gnHeight );
     printf( "Saved: %s\n", filenameBMP );
 

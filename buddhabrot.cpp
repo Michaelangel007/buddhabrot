@@ -480,16 +480,26 @@ int Buddhabrot()
 // ========================================================================
 int Usage()
 {
+    const char *aOffOn[2] =
+    {
+         "OFF"
+        ,"ON "
+    };
+
     printf(
-"Buddhabrot (Single Core) v1.8 by Michael Pohoreski\n"
-"Usage: [width height depth]\n"
+"Buddhabrot (Single Core) by Michael Pohoreski\n"
+"https://github.com/Michaelangel007/buddhabrot\n"
+"Usage: [width [height [depth [scale]]]]\n"
 "\n"
-"-?   Dipslay usage help\n"
+"-?   Display usage help\n"
 "-b   Use auto brightness\n"
-"-r   Don't rotate output bitmap 90 degrees right (Defaults to ON)\n"
-"-raw Don't save raw 16-bit image (Defaults to ON)\n"
+"-r   Turn %s rotation of output bitmap 90 degrees right\n"
+"-raw Turn %s saving raw 16-bit image\n"
 "-v   Verbose.  Display %% complete\n"
+        , aOffOn[ (int) !gbRotateOutput     ]
+        , aOffOn[ (int) !gbSaveRawGreyscale ]
     );
+
     return 0;
 }
 
@@ -498,23 +508,27 @@ int Usage()
 int main( int nArg, char * aArg[] )
 {
     int   iArg = 0;
-    char *pArg;
 
     if( nArg > 1 )
     {
         while( iArg < nArg )
         {
-            if( aArg[iArg+1] && aArg[iArg+1][0] == '-' )
+            char *pArg = aArg[ iArg + 1 ];
+            if(  !pArg )
+                break;
+
+            if( pArg[0] == '-' )
             {
                 iArg++;
-                pArg = &aArg[ iArg ][1]; // point to 1st char in option
+                pArg++; // point to 1st char in option
+
                 if( *pArg == '?' )
                     return Usage();
                 else
                 if( *pArg == 'b' )
                     gbAutoBrightness = true;
                 else
-                if( *pArg == 'r' )
+                if( *pArg == 'r' && (strcmp( pArg, "raw") != 0)) // -r and -raw
                     gbRotateOutput = false;
                 else
                 if( *pArg == 'v' )
@@ -529,14 +543,14 @@ int main( int nArg, char * aArg[] )
                 break;
         }
     }
-    // iArg is index to first non-flag
 
+    // iArg is index to first non-flag
     if ((iArg+1) < nArg) gnWidth    = atoi( aArg[iArg+1] );
     if ((iArg+2) < nArg) gnHeight   = atoi( aArg[iArg+2] );
     if ((iArg+3) < nArg) gnMaxDepth = atoi( aArg[iArg+3] );
     if ((iArg+4) < nArg) gnScale    = atoi( aArg[iArg+4] );
 
-    printf( "Width: %d  Height: %d  Depth: %d  Scale: %d  Rotate: %d  SavRaw: %d\n", gnWidth, gnHeight, gnMaxDepth, gnScale, gbRotateOutput, gbSaveRawGreyscale );
+    printf( "Width: %d  Height: %d  Depth: %d  Scale: %d  RotateBMP: %d  SaveRaw: %d\n", gnWidth, gnHeight, gnMaxDepth, gnScale, gbRotateOutput, gbSaveRawGreyscale );
 
     AllocImageMemory( gnWidth, gnHeight );
 
@@ -556,16 +570,17 @@ int main( int nArg, char * aArg[] )
     int nMaxBrightness = Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
     printf( "Max brightness: %d\n", nMaxBrightness );
 
+    const char *pBaseName = "cpu1_buddhabrot";
+
     if( gbSaveRawGreyscale )
     {
         char     filenameRAW[ 256 ];
-        sprintf( filenameRAW, "raw_cpu1_buddhabrot_%dx%d_%d_%dx.u16.data", gnWidth, gnHeight, gnMaxDepth, gnScale );
+        sprintf( filenameRAW, "raw_%s_%dx%d_%d_%dx.u16.data", pBaseName, gnWidth, gnHeight, gnMaxDepth, gnScale );
 
         RAW_WriteGreyscale16bit( filenameRAW, gpGreyscaleTexels, gnWidth, gnHeight );
         printf( "Saved: %s\n", filenameRAW );
     }
 
-    
     uint16_t *pRotatedTexels = gpGreyscaleTexels; // [ height ][ width ] 16-bit greyscale pre-BMP
     if( gbRotateOutput )
     {
@@ -580,9 +595,10 @@ int main( int nArg, char * aArg[] )
 
     char     filenameBMP[256];
 #if DEBUG
-    sprintf( filenameBMP, "cpu1_buddhabrot_%dx%d_depth_%d_colorscaling_%d_scale_%dx.bmp", gnWidth, gnHeight, gnMaxDepth, (int)gbAutoBrightness, gnScale );
+    sprintf( filenameBMP, "%s_%dx%d_depth_%d_maxbright_%d_autobright_%d_scale_%dx.bmp"
+       , pBaseName, gnWidth, gnHeight, gnMaxDepth, nMaxBrightness (int)gbAutoBrightness, gnScale );
 #else
-    sprintf( filenameBMP, "cpu1_buddhabrot_%dx%d_%d.bmp", gnWidth, gnHeight, gnMaxDepth );
+    sprintf( filenameBMP, "%s_%dx%d_%d.bmp", pBaseName, gnWidth, gnHeight, gnMaxDepth );
 #endif
 
     Image_Greyscale16bitToColor24bit( pRotatedTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
