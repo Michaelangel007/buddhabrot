@@ -12,6 +12,10 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 * Single core - Done!
 * Multi core (OpenMP) - Done!
+
+= TODO =
+
+* MSVC solution and project
 * Multi core (CUDA) - not yet started
 * Multi core (OpenCL) - not yet started
 
@@ -26,9 +30,16 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 # Compiling
 
- On Linux or OSX type: `make` The makefile will detect the OS and use the right flags.
+ On Linux or OSX type: `make` The makefile will detect the OS and use the right flags.  Note that the Cuda versions are not built by default.  Use `make cuda`
 
- For Windows, the Microsoft Visual Studio Solution and Project will be provided soon.
+ For Windows, a MSVC (Microsoft Visual C) solution and project files will be provided soon.
+
+
+# Running
+
+To run the single threaded version `bin/buddhabrot`
+
+To run the multi-threaded version `bin/omp3`
 
 
 # Benchmarks (min:sec) (Lower is Better)
@@ -49,7 +60,7 @@ Using the default 1024x768 at 1,000 depth we can see how much faster parallelizi
     omp1   Multi core (OpenMP) initial version 1
     omp2   Multi core (OpenMP) faster  version 2
     omp3   Multi core (OpenMP) fastest version 3
-    omp4   Multi core (OpenMP) version 3 with float32
+    omp4   Multi core (OpenMP) version 3 with float32 instead of float64 for comparison
     cuda   Multi core (CUDA  )
     ocl    Multi core (OpenCL)
 
