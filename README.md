@@ -16,6 +16,7 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 = TODO =
 
+* Exposure settings via: `raw2bmp -bias # -min # - max #`
 * MSVC solution and project -- not yet started
 * Multi-threaded C++14 -- not yet started
 * Multi-core CUDA -- not yet started
