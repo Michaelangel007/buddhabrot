@@ -78,6 +78,8 @@ Details on hardware used for building and testing:
 | Intel i7            | 2600 MHz | OSX 10.9                | 16 GB DDR3 1600 MHz | GT 750M   |   384 |
 | AMD Phenom II 955BE | 3500 MHz | Linux, Ubuntu 12.04 LTS | 16 GB DDR3 1333 MHz | GTX Titan |  2688 |
 
+* **Note:** Sorry, no AMD verification for now. Later I'll add Radeon 290X timings.
+
 ## = Threads =
 
 Using the shell script `jobs.sh` we can see how the numbers of threads effects time for `bin/omp3` on the AMD system:
