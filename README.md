@@ -10,9 +10,9 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 # Status
 
-* Single threaded (CPU) - done
-* Multi-threaded OpenMP - done
-* Command line switch `-j#` to use a maximum number of threads - done!
+* Single threaded (CPU) -- done
+* Multi-threaded OpenMP -- done
+* Command line switch `-j#` to use a maximum number of threads -- done!
 
 = TODO =
 
@@ -24,13 +24,16 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
                          +-------+------+---------+----------------+
                          | Linux | OSX  | Windows | Filename       |
         +----------------+-------+------+---------+----------------+
-        | Single core    | Done  | Done | TODO    | bin/buddhabrot |
+        | Single threaded| Done  | Done | TODO    | bin/buddhabrot |
         | OpenMP         | Done  | Done | TODO    | bin/omp2       |
-        | CUDA           | TODO  | TODO | TODO    | n/a            |
-        | OpenCL         | TODO  | TODO | TODO    | n/a            |
+        | C++14          | TODO  | TODO | TODO    | bin/c14        |
+        | CUDA           | TODO  | TODO | TODO    | bin/cuda       |
+        | OpenCL         | TODO  | TODO | TODO    | bin/ocl        |
         +----------------+-------+------+---------+----------------+
 
 # Compiling
+
+You will need a compiler that supports OpenMP. On Windows, Microsoft supports OpenMP 2.0 (but no later version.)  Apple switched from `gcc` (which does) to `llvm` (which does not.) See `buddabrot_omp1.cpp` for details on how to install gcc.
 
 On Linux or OSX type: `make` The makefile will detect the OS and use the right flags.  Note that the CUDA versions are NOT built by default, you must use `make cuda`
 
@@ -48,12 +51,11 @@ To run the multi-threaded version `bin/omp3`
 
 Using the default 1,024 x 768 at 1,000 depth we can see how much faster parallelizing the code can be:
 
-        +--------------------+------+------+------+------+------+------+-----+
         | Hardware           | org. | cpu1 | omp1 | omp2 | omp3 | cuda | ocl |
-        +--------------------+------+------+------+------+------+------+-----+
+        |--------------------|------|------|------|------|------|------|-----|
         | Intel i7 @ 2.6 GHz | 0:57 | 0:55 | 0:22 | 0:17 | 0:10 | n/a  | n/a |
         | AMD 955BE@ 3.5 GHz | 1:37 | 1:29 | 1:00 | 0:42 | 0:30 | n/a  | n/a |
-        +--------------------+------+------+------+------+------+------+-----+
+
                                     (min:sec) (Lower is better)
 
         Legend:
