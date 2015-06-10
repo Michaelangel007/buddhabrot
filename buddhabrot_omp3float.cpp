@@ -706,7 +706,7 @@ int main( int nArg, char * aArg[] )
     int nMaxBrightness = Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
     printf( "Max brightness: %d\n", nMaxBrightness );
 
-    const char *pBaseName = "omp4_buddhabrot";
+    const char *pBaseName = "omp3float_buddhabrot";
 
     if( gbSaveRawGreyscale )
     {
