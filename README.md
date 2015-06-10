@@ -1033,8 +1033,10 @@ Is this the fastest we can do? Believe it or not we can further tweak the inner 
 
 Timings:
 
-   i7 : 0:10 seconds
-   AMD: 0:28 seconds
+|CPU| Time |
+|---|------|
+|i7 | 0:10 |
+|AMD| 0:28 |
 
 Our third tweak gets our best time on the AMD box down to:
 
@@ -1058,22 +1060,27 @@ The problem is this naive if() that determines how _often_ we display our progre
 
 What is happening?  We are spending valuable time displaying our progress ...
 
-        +----+----+----+----+----+----+----+----+
-        |work|  % |work|  % |work|  % |work|work|
-        +----+----+----+----+----+----+----+----+
-         1s   1s   1s   1s   1s   1s   1s   1s
+        +----+----+----+----+----+----+----+----+----+----+
+        |work|  % |work|  % |work|  % |work| %  |work| %  |
+        +----+----+----+----+----+----+----+----+----+----+
+         1s   1s   1s   1s   1s   1s   1s   1s   1s   1s
 
 ... instead of spending the majority of time doing work!
 
-        +----+----+----+----+----+----+----+----+
-        |work|work|work|work|work|work|work|  % |
-        +----+----+----+----+----+----+----+----+
-         1s   1s   1s   1s   1s   1s   1s   1s
+        +----+----+----+----+----+----+----+----+----+----+
+        |work|work|work|work|work|work|work|work|work|  % |
+        +----+----+----+----+----+----+----+----+----+----+
+         1s   1s   1s   1s   1s   1s   1s   1s   1s   1s
 
-Given the same length of time we are only doing 40% of the work compared to the best case of 100%  work with no output.  The question then becomes how _often_ should we interleave work and updating the progress? 
+Given the same length of time we are only doing 50% of the work compared to the best case of 100%  work with no output.
+
+        +----+----+----+----+----+----+----+----+----+----+
+        |work|work|work|work|work|work|work|work|work|work|
+        +----+----+----+----+----+----+----+----+----+----+
+         1s   1s   1s   1s   1s   1s   1s   1s   1s   1s
 
 
-In the previous version we simply used the non-scaled width:
+The question then becomes how _often_ should we interleave work and updating the progress?  In the previous version we simply used the non-scaled width:
 
         // BEGIN OMP
                 if( (iTid == 0) && (iCel % gnWidth == 0) )
@@ -1096,9 +1103,9 @@ What is a good balance for the frequency? Let's compare some frequencies running
 | 2^8-1     | 0xFF     | 10:16 |
 | 2^12-1    | 0xFFF    |  8:19 |
 | 2^16-1    | 0xFFFF   |  8:09 |
-| 2^20-1    | 0xFFFFF  | ??:?? |
-| 2^24-1    | 0xFFFFFF | ??:?? |
-| n/a       | n/a      | ??:?? |
+| 2^20-1    | 0xFFFFF  |  8:34 |
+| 2^24-1    | 0xFFFFFF |  8:08 | 34.95% |
+| no output | n/a      |  8:02 | n/a    |
         
 Thus we see that there is always a trade-off between raw speed and displaying a progress.
 
