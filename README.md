@@ -1112,7 +1112,7 @@ What is a good balance for the frequency? Let's compare some frequencies running
 | 2^24-1    | 0xFFFFFF |  8:08 |  34.95% |
 | no output | n/a      |  8:02 |     n/a |
         
-Thus we see that there is always a trade-off between raw speed and displaying a progress. We update the progress more then it will take longer to actually finish the job.
+Thus we see that there is always a trade-off between raw speed and displaying a progress. If we update the progress more frequent then it will take longer to actually finish the rendering.
 
 
 ## == A matter of precision? ==
