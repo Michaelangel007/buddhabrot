@@ -102,14 +102,14 @@ Using the shell script `depth.sh` we can see how depth effects time on the AMD b
 
 | Command line                 | Time  |
 |------------------------------|-------|
-| `bin/omp2    4000 3000 4000` | ??:?? |
-| `bin/omp2 -v 4000 3000 4000` | ??:?? |
-| `bin/omp2    4000 3000 3000` | ??:?? |
-| `bin/omp2 -v 4000 3000 3000` | ??:?? |
-| `bin/omp2    4000 3000 2000` | ??:?? |
-| `bin/omp2 -v 4000 3000 2000` | ??:?? |
-| `bin/omp2    4000 3000 1000` | ??:?? |
-| `bin/omp2 -v 4000 3000 1000` | ??:?? |
+| `bin/omp3 -v 4000 3000 4000` | 27:18 |
+| `bin/omp3    4000 3000 4000` | 26:45 |
+| `bin/omp3 -v 4000 3000 3000` | ??:?? |
+| `bin/omp3    4000 3000 3000` | ??:?? |
+| `bin/omp3 -v 4000 3000 2000` | 14:21 |
+| `bin/omp3    4000 3000 2000` | 14:12 |
+| `bin/omp3 -v 4000 3000 1000` |  8:01 |
+| `bin/omp3    4000 3000 1000` |  7:52 |
 
        /bin/omp2    4000 3000 2000   # 637 seconds, 10:37
 
@@ -742,6 +742,9 @@ We try out the new code `bin/omp2` and see we have a time of 0:42 seconds which 
         = 100 * 1 - (47 / 96)
         = 51.04% faster
 
+
+## === Bottlenecks? ===
+
 Except there is one minor performance penalty. What!?
 
 Hint: It is with output.
@@ -1030,10 +1033,12 @@ Is this the fastest we can do? Believe it or not we can further tweak the inner 
 
 Timings:
 
-   i7 : 0:10 seconds
-   AMD: 0:28 seconds
+|CPU| Time |
+|---|------|
+|i7 | 0:10 |
+|AMD| 0:28 |
 
-Our third tweak gets our best time on AMD down to:
+Our third tweak gets our best time on the AMD box down to:
 
         % faster = 100 * (1 - (new time / old time))
 
@@ -1041,10 +1046,67 @@ Our third tweak gets our best time on AMD down to:
         = 70.83% faster
 
 
-Thus our final time on the i7 is 0:10 !
+## == Bottlenecks revisted ==
 
-If we turn on output, our time goes down to ...
+The previous timing was our best case.  If we again turn on output our time for the AMD box goes from 0:28 to ?:??.
 
+The problem is this naive if() that determines how _often_ we display our progress.
+
+        // BEGIN OMP
+                if (iTid == 0)
+        // END OMP
+                {
+                }
+
+What is happening?  We are spending valuable time displaying our progress ...
+
+        +----+----+----+----+----+----+----+----+----+----+
+        |work|  % |work|  % |work|  % |work| %  |work| %  |
+        +----+----+----+----+----+----+----+----+----+----+
+         1s   1s   1s   1s   1s   1s   1s   1s   1s   1s
+
+... instead of spending the majority of time doing work!
+
+        +----+----+----+----+----+----+----+----+----+----+
+        |work|work|work|work|work|work|work|work|work|  % |
+        +----+----+----+----+----+----+----+----+----+----+
+         1s   1s   1s   1s   1s   1s   1s   1s   1s   1s
+
+Given the same length of time we are only doing 50% of the work compared to the best case of 100%  work with no output.
+
+        +----+----+----+----+----+----+----+----+----+----+
+        |work|work|work|work|work|work|work|work|work|work|
+        +----+----+----+----+----+----+----+----+----+----+
+         1s   1s   1s   1s   1s   1s   1s   1s   1s   1s
+
+
+The question then becomes how _often_ should we interleave work and updating the progress?  In the previous version we simply used the non-scaled width:
+
+        // BEGIN OMP
+                if( (iTid == 0) && (iCel % gnWidth == 0) )
+        // END OMP
+                {
+                }
+
+Lets remove that costly division and replace it with something simpler and faster.
+
+        // BEGIN OMP
+                if( (iTid == 0) && ((iCel & frequency) == 0) )
+        // END OMP
+                {
+                }
+
+What is a good balance for the frequency? Let's compare some frequencies running `bin/omp3 -v 4000 3000`
+
+| Frequency | Hex      | Time  |
+|-----------|---------:|-------|
+| 2^8-1     | 0xFF     | 10:16 |
+| 2^12-1    | 0xFFF    |  8:19 |
+| 2^16-1    | 0xFFFF   |  8:09 |
+| 2^20-1    | 0xFFFFF  |  8:34 |
+| 2^24-1    | 0xFFFFFF |  8:08 | 34.95% |
+| no output | n/a      |  8:02 | n/a    |
+        
 Thus we see that there is always a trade-off between raw speed and displaying a progress.
 
 
