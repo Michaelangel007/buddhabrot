@@ -559,7 +559,7 @@ int Buddhabrot()
 
         VERBOSE
 // BEGIN OMP
-        if (iTid == 0)
+        if( (iTid == 0) && ((iCel & 0xFFFFF) == 0) )
 // END OMP
         {
             // We no longer need a critical section
