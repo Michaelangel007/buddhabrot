@@ -1,7 +1,7 @@
 # https://github.com/Michaelangel007/buddhabrot
 
 all: bin/buddhabrot \
-     bin/omp1 bin/omp2 bin/omp3 bin/omp3float \
+     bin/omp1 bin/omp2 bin/omp3 bin/omp3float bin/omp4 \
      bin/evercat bin/raw2bmp bin/mandelbrot bin/mandelbrot_omp \
      bin/text_mandelbrot bin/text_buddhabrot
 
@@ -80,7 +80,7 @@ bin/buddhabrot: buddhabrot.cpp
 	$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@
 
-# Multi Core (OpenMP) Fast - First version - parallel outer loop
+# Multi Core (OpenMP) Faster - First version - parallel outer loop
 bin/omp1: buddhabrot_omp1.cpp
 	$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
@@ -90,8 +90,13 @@ bin/omp2: buddhabrot_omp2.cpp
 	$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 
-# Multi Core (OpenMP) Fastest - Third version - parallel outer and inner loop -> linearized
+# Multi Core (OpenMP) Faster 2 - Third version - parallel outer and inner loop -> linearized
 bin/omp3: buddhabrot_omp3.cpp
+	$(MAKE_BIN_DIR)
+	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
+
+# Multi Core (OpenMP) Fastest - Fourth version - optimized plot()
+bin/omp4: buddhabrot_omp4.cpp
 	$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 
