@@ -86,14 +86,14 @@ Details on hardware used for building and testing:
 | Intel i7            | 2600 MHz | OSX 10.9                | 16 GB DDR3 1600 MHz | GT 750M   |   384 |
 | AMD Phenom II 955BE | 3500 MHz | Linux, Ubuntu 12.04 LTS | 16 GB DDR3 1333 MHz | GTX Titan |  2688 |
 
-* **Note:** Sorry, no AMD verification for now. Later I'll add Radeon 290X timings.
+* **Note:** Sorry, no AMD FX-8350 or AMD GPU verification for now. I'll eventuallly add Radeon 290X timings.
 
 ## = Threads =
 
 Using the shell script `jobs.sh` we can see how the numbers of threads effects time for `bin/omp3` on the AMD system:
 
 | Command line   | # | Time |
-|----------------|---|------|
+|----------------|---|-----:|
 | `bin/omp3 -j1` | 1 | 1:31 |
 | `bin/omp3 -j2` | 2 | 0:47 |
 | `bin/omp3 -j3` | 3 | 0:33 |
@@ -104,7 +104,7 @@ Using the shell script `jobs.sh` we can see how the numbers of threads effects t
 Using the shell script `depth.sh` we can see how depth effects time on the AMD box:
 
 | Command line                 | Time  |
-|------------------------------|-------|
+|------------------------------|------:|
 | `bin/omp3 -v 4000 3000 4000` | 27:18 |
 | `bin/omp3    4000 3000 4000` | 26:45 |
 | `bin/omp3 -v 4000 3000 3000` | ??:?? |
@@ -114,7 +114,9 @@ Using the shell script `depth.sh` we can see how depth effects time on the AMD b
 | `bin/omp3 -v 4000 3000 1000` |  8:01 |
 | `bin/omp3    4000 3000 1000` |  7:52 |
 
-       /bin/omp2    4000 3000 2000   # 637 seconds, 10:37
+| Command line                 | Seconds | Time  |
+|------------------------------|--------:|------:|
+| `/bin/omp2   4000 3000 2000` |     637 | 10:37 |
 
 # Tutorial: HOWTO Write a Multi-Core program
 
@@ -499,7 +501,9 @@ On our AMD platform the original version runs in 1:37 (97 seconds) -- this is mo
 Since the original version has numerous bugs, lacks features, and is hard-coded we'll clean it up so the code is clean, clear, compact, and concise.  Along the way we'll also add multi-core support and provide timings of various hardware so we can see just how much faster each version becomes.
 
 
-AMD time 0:42
+| CPU | Time  |
+|-----|------:|
+| AMD |  0:42 |
 
         int Buddhabrot()
         {
