@@ -16,6 +16,9 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 = TODO =
 
+* -h  Save partial histogram images
+* --no-raw Don't save raw
+* --no-bmp Don't save BMP
 * Exposure settings via: `raw2bmp -bias # -min # - max #`
 * MSVC solution and project -- not yet started
 * Multi-threaded C++14 -- not yet started
@@ -1098,16 +1101,18 @@ Lets remove that costly division and replace it with something simpler and faste
 
 What is a good balance for the frequency? Let's compare some frequencies running `bin/omp3 -v 4000 3000`
 
-| Frequency | Hex      | Time  |
-|-----------|---------:|-------|
-| 2^8-1     | 0xFF     | 10:16 |
-| 2^12-1    | 0xFFF    |  8:19 |
-| 2^16-1    | 0xFFFF   |  8:09 |
-| 2^20-1    | 0xFFFFF  |  8:34 |
-| 2^24-1    | 0xFFFFFF |  8:08 | 34.95% |
-| no output | n/a      |  8:02 | n/a    |
+| Frequency | Hex      | Time  | +%      |
+|-----------|---------:|------:|--------:|
+| 0         | n/a      | ??:?? | < 0.01% | 
+| 2^8-1     | 0xFF     | 10:16 | < 0.01% |
+| width     | 4000     |  8:19 | < 0.01% |
+| 2^12-1    | 0xFFF    |  8:19 |   0.02% |
+| 2^16-1    | 0xFFFF   |  8:09 |   0.03% |
+| 2^20-1    | 0xFFFFF  |  8:34 |  13.98% |
+| 2^24-1    | 0xFFFFFF |  8:08 |  34.95% |
+| no output | n/a      |  8:02 |     n/a |
         
-Thus we see that there is always a trade-off between raw speed and displaying a progress.
+Thus we see that there is always a trade-off between raw speed and displaying a progress. We update the progress more then it will take longer to actually finish the job.
 
 
 ## == A matter of precision? ==
