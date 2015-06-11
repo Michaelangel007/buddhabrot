@@ -82,7 +82,7 @@ Details on hardware used for building and testing:
 
 | CPU                 | Clock    | OS                      | RAM                 | GPU       | Cores |
 |---------------------|----------|-------------------------|---------------------|-----------|-------|
-| Intel i7-4770K      | 4040 MHz | Windows 7 Pro           | 32 GB DDR3 1600 Mhz | GTX 980Ti |  2880 |
+| Intel i7-4770K      | 4040 MHz | Windows 7 Pro           | 32 GB DDR3 1600 Mhz | GTX 980Ti |  2816 |
 | Intel i7            | 2600 MHz | OSX 10.9                | 16 GB DDR3 1600 MHz | GT 750M   |   384 |
 | AMD Phenom II 955BE | 3500 MHz | Linux, Ubuntu 12.04 LTS | 16 GB DDR3 1333 MHz | GTX Titan |  2688 |
 
@@ -845,8 +845,9 @@ Fortunately atomics are relatively cheap. Here is the final version:
                 }
             }
 
-
-AMD time 0:42
+| CPU     | Time |
+|---------|-----:|
+|AMD 955BE| 0:42 |
 
         int Buddhabrot()
         {
@@ -1040,10 +1041,10 @@ Is this the fastest we can do? Believe it or not we can further tweak the inner 
 
 Timings:
 
-|CPU| Time |
-|---|------|
-|i7 | 0:10 |
-|AMD| 0:28 |
+|CPU       | Time |
+|----------|-----:|
+|i7        | 0:10 |
+|AMD 955BE | 0:28 |
 
 Our third tweak gets our best time on the AMD box down to:
 
@@ -1142,6 +1143,23 @@ Parallelzing an algorithm is not always possible.  Sometimes we have to think "o
 * `raw2bmp` Convert a raw 16-bit .data to .bmp
 * `cuda-info` Display # of cores on your nVidia GPU
 
+
+# Interesting Buddhabrot Links
+
+* http://erleuchtet.org/2010/07/ridiculously-large-buddhabrot.html
+* http://www.fractalforums.com/mandelbulb-implementation/webgl-mandelbulb-with-three-js-flythrough-controls-%28optimizations-wanted%29/
+* http://www.fractalforums.com/programming/buddhabrot-on-gpu/
+* https://sites.google.com/site/buddhabrotmt/
+* http://code.google.com/p/buddahbrot-opencl/
+* https://devtalk.nvidia.com/default/topic/472080/most-amazing-fractal-renderer-buddhabrots-comes-with-source-code-and-ready-to-run-binaries/
+* http://www.ozone3d.net/tutorials/mandelbrot_set_p6.php
+* http://www.infinityk.com/asier/portfolio/buddhabrot-rendered-using-opencl/
+
+# Intersting Mandelbrot Links
+
+* http://www.aluminumstudios.com/under-the-bodhi-tree-buddhabrot-animation/
+* https://www.youtube.com/watch?v=0jGaio87u3A
+
 # References
 
 * PDF: [A "Hands-on" Introduction to OpenMP](http://openmp.org/mp-documents/omp-hands-on-SC08.pdf)
@@ -1150,6 +1168,9 @@ Parallelzing an algorithm is not always possible.  Sometimes we have to think "o
 * PPT: http://www.cs.berkeley.edu/~mhoemmen/cs194/Lectures/openmp-tutorial.ppt
 * https://software.intel.com/en-us/node/527527
 * http://stackoverflow.com/questions/14016026/openmp-and-pragma-omp-atomic
+* http://stackoverflow.com/questions/1448318/omp-parallel-vs-omp-parallel-for
+* C++ Thread Librayr http://en.cppreference.com/w/cpp/thread
+* C++ Thread http://en.cppreference.com/w/cpp/thread/thread
 
 # Misc. Links
 
