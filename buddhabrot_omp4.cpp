@@ -788,7 +788,7 @@ int main( int nArg, char * aArg[] )
         if( gpFileNameRAW )
             Text_CopyFileName( filenameRAW, gpFileNameRAW, PATH_SIZE-1 ); 
         else
-            sprintf( filenameRAW, "raw_%s_r%dx%d_d%d_s%d_j%d.u16.data"
+            sprintf( filenameRAW, "raw_%s_%dx%d_d%d_s%d_j%d.u16.data"
                 , pBaseName, gnWidth, gnHeight, gnMaxDepth, gnScale, gnThreadsActive );
 
         RAW_WriteGreyscale16bit( filenameRAW, gpGreyscaleTexels, gnWidth, gnHeight );

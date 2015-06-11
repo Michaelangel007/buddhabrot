@@ -3,23 +3,23 @@
 mkdir -p verify
 cd       verify
 
-echo "\nSingle-threaded ...      " ; ../bin/buddhabrot
-echo "\nMulti-threaded v1 ...    " ; ../bin/omp1
-echo "\nMulti-threaded v2 ...    " ; ../bin/omp2
-echo "\nMulti-threaded v3 ...    " ; ../bin/omp3
-echo "\nMulti-threaded v3 float32" ; ../bin/omp3float32
-echo "\nMulti-threaded v4 ...    " ; ../bin/omp4
+echo -e "\nSingle-threaded ...      " ; ../bin/buddhabrot -raw cpu1.data
+echo -e "\nMulti-threaded v1 ...    " ; ../bin/omp1       -raw omp1.data
+echo -e "\nMulti-threaded v2 ...    " ; ../bin/omp2       -raw omp2.data
+echo -e "\nMulti-threaded v3 ...    " ; ../bin/omp3       -raw omp3.data
+echo -e "\nMulti-threaded v3 float32" ; ../bin/omp3float  -raw omp3float.data
+echo -e "\nMulti-threaded v4 ...    " ; ../bin/omp4       -raw omp4.data
 
 echo -e "\nComparing raw images ..."
 
-diff "raw_cpu1_buddhabrot_1024x768_1000_10x.u16.data" "raw_omp1_buddhabrot_1024x768_1000_10x.u16.data"
-diff "raw_cpu1_buddhabrot_1024x768_1000_10x.u16.data" "raw_omp2_buddhabrot_1024x768_1000_10x.u16.data"
-diff "raw_cpu1_buddhabrot_1024x768_1000_10x.u16.data" "raw_omp3_buddhabrot_1024x768_1000_10x.u16.data"
-diff "raw_cpu1_buddhabrot_1024x768_1000_10x.u16.data" "raw_omp4_buddhabrot_1024x768_1000_10x.u16.data"
+diff "cpu1.data" "omp1.data"
+diff "cpu1.data" "omp2.data"
+diff "cpu1.data" "omp3.data"
+diff "cpu1.data" "omp4.data"
 
-echo "Compared float64 with float32"
-diff "raw_omp3_buddhabrot_1024x768_1000_10x.u16.data" "raw_omp3float_buddhabrot_1024x768_1000_10x.u16.data"
+echo -e "\nCompare float64 with float32"
+diff "omp3.data" "omp3float.data"
 
-echo "Compared two Fastest verions v3 and v4"
-diff "raw_omp3_buddhabrot_1024x768_1000_10x.u16.data" "raw_omp4_buddhabrot_1024x768_1000_10x.u16.data"
+echo -e "\bCompare two Fastest verions v3 and v4"
+diff "omp3.data" "omp4.data"
 
