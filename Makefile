@@ -59,12 +59,12 @@ clean:
 
 # Tutorial Mandelbrot
 bin/text_mandelbrot: text_mandelbrot.cpp
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $<
 
 # Tutorial Buddhabrot
 bin/text_buddhabrot: text_buddhabrot.cpp
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $<
 
 # Original reference version by Evercat
@@ -72,61 +72,61 @@ bin/text_buddhabrot: text_buddhabrot.cpp
 # so you will have to time manually:
 #    time bin/evercat
 bin/evercat: original.c
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) -o $@ $<
 
 # Single Core
 bin/buddhabrot: buddhabrot.cpp
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@
 
 # Multi Core (OpenMP) Faster - First version - parallel outer loop
 bin/omp1: buddhabrot_omp1.cpp
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 
 # Multi Core (OpenMP) Faster - Second version - parallel outer and inner loop -> linearized
 bin/omp2: buddhabrot_omp2.cpp
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 
 # Multi Core (OpenMP) Faster 2 - Third version - parallel outer and inner loop -> linearized
 bin/omp3: buddhabrot_omp3.cpp
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 
 # Multi Core (OpenMP) Fastest - Fourth version - optimized plot()
 bin/omp4: buddhabrot_omp4.cpp
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 
 # Multi Core (OpenMP) Float
 bin/omp3float: buddhabrot_omp3float.cpp
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
 
 # Utility
 bin/raw2bmp: raw2bmp.cpp
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@
 
 # CUDA
 bin/cuda: buddhrabrot_cuda.cu
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	nvcc $(CUDAFLAGS) $< -o $@
 
 # CUDA Info
 bin/cuda_info: cuda_info.cu
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	nvcc $(CUDAFLAGS) $< -o $@
 
 # Single Core Mandelbrot
 bin/mandelbrot: mandelbrot.cpp
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@
 
 # Multi Core (OpenMP) Mandelbrot
 bin/mandelbrot_omp: mandelbrot.cpp
-	$(MAKE_BIN_DIR)
+	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) -DOMP $< -o $@ $(LIB_OMP)
 
