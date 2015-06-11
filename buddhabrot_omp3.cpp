@@ -559,7 +559,7 @@ int Buddhabrot()
 
         VERBOSE
 // BEGIN OMP
-        if( (iTid == 0) && ((iCel & 0xFFFFF) == 0) )
+        if( (iTid == 0) && ((iCel & 0xFFFF) == 0) )
 // END OMP
         {
             // We no longer need a critical section
@@ -694,6 +694,8 @@ int main( int nArg, char * aArg[] )
     stopwatch.Start();
         int nCells = Buddhabrot();
     stopwatch.Stop();
+
+    VERBOSE printf( "100.00%%\n" );
     stopwatch.Throughput( nCells ); // Calculate throughput in pixels/s
     printf( "%d %cpix/s (%d pixels, %.f seconds = %d:%02d)\n"
         , (int)stopwatch.throughput.per_sec, stopwatch.throughput.prefix
@@ -702,7 +704,6 @@ int main( int nArg, char * aArg[] )
         , stopwatch.mins, stopwatch.secs
     );
 
-    VERBOSE printf( "\n" );
     int nMaxBrightness = Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
     printf( "Max brightness: %d\n", nMaxBrightness );
 
