@@ -10,15 +10,18 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 # Status
 
-* Single threaded (CPU) -- done
-* Multi-threaded OpenMP -- done
-* Command line switch `-j#` to use a maximum number of threads -- done!
+* Single threaded (CPU) -- done!
+* Multi-threaded OpenMP -- done!
+* `-j#` Use a maximum number of threads -- done!
+* `--no-bmp` Don't save BMP image -- done!
+* `--no-raw` Don't save raw image -- done!
+* `--no-rot` Don't rotate BMP -- done!
+* `-bmp foo.bmp` Save BMP with specified filename -- done!
+* `-raw bar.raw` save RAW with specified filename -- done!
 
 = TODO =
 
 * -h  Save partial histogram images
-* --no-raw Don't save raw
-* --no-bmp Don't save BMP
 * Exposure settings via: `raw2bmp -bias # -min # - max #`
 * MSVC solution and project -- not yet started
 * Multi-threaded C++14 -- not yet started
