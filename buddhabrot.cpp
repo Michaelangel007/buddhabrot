@@ -373,6 +373,37 @@ Image_Greyscale16bitToColor24bit(
 
 
 // ========================================================================
+char* itoaComma( size_t n, char *output_ = NULL )
+{
+    const  size_t SIZE = 32;
+    static char   buffer[ SIZE ];
+    /* */  char  *p = buffer + SIZE-1;
+    *p-- = 0;
+
+    while( n >= 1000 )
+    {
+        *p-- = '0' + (n % 10); n /= 10;
+        *p-- = '0' + (n % 10); n /= 10;
+        *p-- = '0' + (n % 10); n /= 10;
+        *p-- = ','                    ;
+    }
+
+    /*      */ { *p-- = '0' + (n % 10); n /= 10; }
+    if( n > 0) { *p-- = '0' + (n % 10); n /= 10; }
+    if( n > 0) { *p-- = '0' + (n % 10); n /= 10; }
+
+    if( output_ )
+    {
+        char   *pEnd = buffer + SIZE - 1;
+        size_t  nLen = pEnd - p; 
+        memcpy( output_, p+1, nLen );
+    }
+
+    return ++p;
+}
+
+
+// ========================================================================
 void
 RAW_WriteGreyscale16bit( const char *filename, const uint16_t *texels, const int width, const int height )
 {
@@ -425,11 +456,11 @@ int Buddhabrot()
     if( gnScale < 0)
         gnScale = 1;
 
-    const int nCol = gnWidth  * gnScale ; // scaled width
-    const int nRow = gnHeight * gnScale ; // scaled height
+    const size_t nCol = gnWidth  * gnScale ; // scaled width
+    const size_t nRow = gnHeight * gnScale ; // scaled height
 
-    /* */ int iCel = 0                  ; // Progress status for percent compelete
-    const int nCel = nCol     * nRow    ; // scaled width * scaled height;
+    /* */ size_t iCel = 0                  ; // Progress status for percent compelete
+    const size_t nCel = nCol     * nRow    ; // scaled width * scaled height;
 
     const double nWorldW = gnWorldMaxX - gnWorldMinX;
     const double nWorldH = gnWorldMaxY - gnWorldMinY;
@@ -441,17 +472,21 @@ int Buddhabrot()
     const double dx = nWorldW / (nCol - 1.0);
     const double dy = nWorldH / (nRow - 1.0);
 
-    for( int iCol = 0; iCol < nCol; iCol++ )
+    char sDenominator[ 32 ];
+    itoaComma( nCel, sDenominator );
+
+    for( size_t iCol = 0; iCol < nCol; iCol++ )
     {
         const double x = gnWorldMinX + (iCol * dx);
 
-        for( int iRow = 0; iRow < nRow; iRow++ )
+        for( size_t iRow = 0; iRow < nRow; iRow++ )
         {
             const double y = gnWorldMinY + (iRow * dy);
 
+            /* */ double r = 0., i = 0., s, j;
+
             iCel++;
 
-            double r = 0., i = 0., s, j;
             for (int depth = 0; depth < gnMaxDepth; depth++)
             {
                 s = (r*r - i*i) + x; // Zn+1 = Zn^2 + C<x,y>
@@ -470,9 +505,12 @@ int Buddhabrot()
 
         VERBOSE // Update % complete for each column
         {
-                const double percent = (100.0 * iCel) / nCel;
+                const size_t n = iCel;
+                const double percent = (100.0 * n) / nCel;
+                static char  sNumerator[ 32 ];
+                itoaComma( n, sNumerator );
 
-                printf( "%6.2f%% = %d / %d%s", percent, iCel, nCel, gaBackspace );
+                printf( "%6.2f%% = %s / %s%s", percent, sNumerator, sDenominator, gaBackspace );
                 fflush( stdout );
         }
     }

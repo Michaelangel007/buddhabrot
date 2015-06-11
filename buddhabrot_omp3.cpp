@@ -452,6 +452,37 @@ Image_Greyscale16bitToColor24bit(
 
 
 // ========================================================================
+char* itoaComma( size_t n, char *output_ = NULL )
+{
+    const  size_t SIZE = 32;
+    static char   buffer[ SIZE ];
+    /* */  char  *p = buffer + SIZE-1;
+    *p-- = 0;
+
+    while( n >= 1000 )
+    {
+        *p-- = '0' + (n % 10); n /= 10;
+        *p-- = '0' + (n % 10); n /= 10;
+        *p-- = '0' + (n % 10); n /= 10;
+        *p-- = ','                    ;
+    }
+
+    /*      */ { *p-- = '0' + (n % 10); n /= 10; }
+    if( n > 0) { *p-- = '0' + (n % 10); n /= 10; }
+    if( n > 0) { *p-- = '0' + (n % 10); n /= 10; }
+
+    if( output_ )
+    {
+        char   *pEnd = buffer + SIZE - 1;
+        size_t  nLen = pEnd - p; 
+        memcpy( output_, p+1, nLen );
+    }
+
+    return ++p;
+}
+
+
+// ========================================================================
 void
 RAW_WriteGreyscale16bit( const char *filename, const uint16_t *texels, const int width, const int height )
 {
@@ -504,11 +535,11 @@ int Buddhabrot()
     if( gnScale < 0)
         gnScale = 1;
 
-    const int nCol = gnWidth  * gnScale ; // scaled width
-    const int nRow = gnHeight * gnScale ; // scaled height
+    const size_t nCol = gnWidth  * gnScale ; // scaled width
+    const size_t nRow = gnHeight * gnScale ; // scaled height
 
-    /* */ int iCel = 0                  ; // Progress status for percent compelete
-    const int nCel = nCol     * nRow    ; // scaled width  * scaled height;
+    /* */ size_t iCel = 0                  ; // Progress status for percent compelete
+    const size_t nCel = nCol     * nRow    ; // scaled width  * scaled height;
 
     const double nWorldW = gnWorldMaxX - gnWorldMinX;
     const double nWorldH = gnWorldMaxY - gnWorldMinY;
@@ -520,13 +551,16 @@ int Buddhabrot()
     const double dx = nWorldW / (nCol - 1.0);
     const double dy = nWorldH / (nRow - 1.0);
 
+    char sDenominator[ 32 ];
+    itoaComma( nCel, sDenominator );
+
 // BEGIN OMP
     // 1. Scatter
 
     // Linearize to 1D
 #pragma omp parallel for
 // END OMP
-    for( int iPix = 0; iPix < nCel; iPix++ )
+    for( size_t iPix = 0; iPix < nCel; iPix++ )
     {
 // BEGIN OMP
 #pragma omp atomic
@@ -536,8 +570,8 @@ int Buddhabrot()
         /* */ uint16_t* pTex = gaThreadsTexels[ iTid ];
 // END OMP
 
-        const int       iCol = iCel % nCol;
-        const int       iRow = iCel / nCol;
+        const size_t    iCol = iCel % nCol;
+        const size_t    iRow = iCel / nCol;
 
         const double    x = gnWorldMinX + (iCol * dx);
         const double    y = gnWorldMinY + (iRow * dy);
@@ -567,9 +601,12 @@ int Buddhabrot()
             // We no longer need a critical section
             // since we only allow thread 0 to print
             {
-                const double percent = (100.0 * iCel) / nCel;
+                const size_t n = iCel;
+                const double percent = (100.0 * n) / nCel;
+                static char  sNumerator[ 32 ];
+                itoaComma( n, sNumerator );
 
-                printf( "%6.2f%% = %d / %d%s", percent, iCel, nCel, gaBackspace );
+                printf( "%6.2f%% = %s / %s%s", percent, sNumerator, sDenominator, gaBackspace );
                 fflush( stdout );
             }
         }
