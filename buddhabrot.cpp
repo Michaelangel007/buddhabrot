@@ -6,7 +6,7 @@
     Based on the original version by Evercat
 
         g++ -Wall -O2 buddhabrot.cpp -o buddhabrot
-        ./bin/buddhabrot 3000 4000 20000
+        buddhabrot 4000 3000 20000
 
    Released under the GNU Free Documentation License
    or the GNU Public License, whichever you prefer.
@@ -46,6 +46,7 @@
     bool      gbVerbose          = false;
     bool      gbSaveRawGreyscale = true ;
     bool      gbRotateOutput     = true ;
+    bool      gbSaveBMP          = true ;
 
     // Calculated/Cached
     uint32_t  gnImageArea        =    0; // image width * image height
@@ -56,6 +57,9 @@
 
     const int BUFFER_BACKSPACE   = 64;
     char      gaBackspace[ BUFFER_BACKSPACE ];
+
+    char     *gpFileNameBMP      = 0; // user over-ride default?
+    char     *gpFileNameRAW      = 0; // user over-ride default?
 
 
 // Timer___________________________________________________________________________ 
@@ -486,21 +490,45 @@ int Usage()
         ,"ON "
     };
 
+    const char *aSaved[2] =
+    {
+         "SKIP"
+        ,"SAVE"
+    };
+
     printf(
-"Buddhabrot (Single Core) by Michael Pohoreski\n"
+"Buddhabrot (OMP) by Michael Pohoreski\n"
 "https://github.com/Michaelangel007/buddhabrot\n"
 "Usage: [width [height [depth [scale]]]]\n"
 "\n"
-"-?   Display usage help\n"
-"-b   Use auto brightness\n"
-"-r   Turn %s rotation of output bitmap 90 degrees right\n"
-"-raw Turn %s saving raw 16-bit image\n"
-"-v   Verbose.  Display %% complete\n"
-        , aOffOn[ (int) !gbRotateOutput     ]
-        , aOffOn[ (int) !gbSaveRawGreyscale ]
+"-?       Display usage help\n"
+"-b       Use auto brightness\n"
+"-bmp foo Save .BMP as filename foo\n"
+"--no-bmp Don't save .BMP  (Default: %s)\n"
+"--no-raw Don't save .data (Default: %s)\n"
+"--no-rot Don't rotate BMP (Default: %s)\n"
+"-r       Rotation output bitmap 90 degrees right\n"
+"-raw foo Save raw greyscale as foo\n"
+"-v       Verbose.  Display %% complete\n"
+        , aSaved[ (int) gbSaveBMP          ]
+        , aOffOn[ (int) gbRotateOutput     ]
+        , aOffOn[ (int) gbSaveRawGreyscale ]
     );
 
     return 0;
+}
+
+
+// ========================================================================
+void Text_CopyFileName( char *buffer, const char *source, const size_t maxlen )
+{
+    size_t  nLen = strlen( source );
+
+    if( nLen >  maxlen )
+        nLen =  maxlen ;
+
+    strncpy( buffer, source, nLen );
+    buffer[ nLen ] = 0;
 }
 
 
@@ -522,20 +550,62 @@ int main( int nArg, char * aArg[] )
                 iArg++;
                 pArg++; // point to 1st char in option
 
+                if( strcmp( pArg, "--no-bmp" ) == 0 )
+                    gbSaveBMP = false;
+                else 
+                if( strcmp( pArg, "--no-raw" ) == 0 )
+                    gbSaveRawGreyscale = false;
+                else 
+                if( strcmp( pArg, "--no-rot" ) == 0 )
+                    gbRotateOutput = false;
+                else 
                 if( *pArg == '?' )
                     return Usage();
                 else
-                if( *pArg == 'b' )
+                if( *pArg == 'b' && (strcmp( pArg, "bmp") != 0) ) // -b and -bmp
                     gbAutoBrightness = true;
                 else
-                if( *pArg == 'r' && (strcmp( pArg, "raw") != 0)) // -r and -raw
-                    gbRotateOutput = false;
+                if( strcmp( pArg, "bmp" ) == 0 )
+                {
+                    int n = iArg+1; 
+                    if( n < nArg )
+                    {
+                        iArg++;
+                        pArg = aArg[ n ];
+                        gpFileNameBMP = pArg;
+
+                        n = iArg + 1;
+                        if( n < nArg )
+                        {
+                            pArg = aArg[ n ] - 1; 
+                            *pArg = 0; 
+                       }
+                    }
+                }
+                else
+                if( *pArg == 'r' && (strcmp( pArg, "raw") != 0) ) // -r and -raw
+                    gbRotateOutput = true;
                 else
                 if( *pArg == 'v' )
                     gbVerbose = true;
                 else
                 if( strcmp( pArg, "raw" ) == 0 )
-                    gbSaveRawGreyscale = false;
+                {
+                    int n = iArg+1; 
+                    if( n < nArg )
+                    {
+                        iArg++;
+                        pArg = aArg[ n ];
+                        gpFileNameRAW = pArg;
+
+                        n = iArg + 1;
+                        if( n < nArg )
+                        {
+                            pArg = aArg[ n ] - 1; 
+                            *pArg = 0; 
+                       }
+                    }
+                }
                 else
                     printf( "Unrecognized option: %c\n", *pArg ); 
             }
@@ -558,6 +628,8 @@ int main( int nArg, char * aArg[] )
     stopwatch.Start();
         int nCells = Buddhabrot();
     stopwatch.Stop();
+
+    VERBOSE printf( "100.00%%\n" );
     stopwatch.Throughput( nCells ); // Calculate throughput in pixels/s
     printf( "%d %cpix/s (%d pixels, %.f seconds = %d:%02d)\n"
         , (int)stopwatch.throughput.per_sec, stopwatch.throughput.prefix
@@ -566,16 +638,21 @@ int main( int nArg, char * aArg[] )
         , stopwatch.mins, stopwatch.secs
     );
 
-    VERBOSE printf( "\n" );
     int nMaxBrightness = Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
     printf( "Max brightness: %d\n", nMaxBrightness );
 
+    const int PATH_SIZE = 256;
     const char *pBaseName = "cpu1_buddhabrot";
+    /* */ char filenameRAW[ PATH_SIZE ];
+    /* */ char filenameBMP[ PATH_SIZE ];
 
     if( gbSaveRawGreyscale )
     {
-        char     filenameRAW[ 256 ];
-        sprintf( filenameRAW, "raw_%s_%dx%d_%d_%dx.u16.data", pBaseName, gnWidth, gnHeight, gnMaxDepth, gnScale );
+        if( gpFileNameRAW )
+            Text_CopyFileName( filenameRAW, gpFileNameRAW, PATH_SIZE-1 ); 
+        else
+            sprintf( filenameRAW, "raw_%s_r%dx%d_d%d_s%d.u16.data"
+                , pBaseName, gnWidth, gnHeight, gnMaxDepth, gnScale );
 
         RAW_WriteGreyscale16bit( filenameRAW, gpGreyscaleTexels, gnWidth, gnHeight );
         printf( "Saved: %s\n", filenameRAW );
@@ -593,17 +670,17 @@ int main( int nArg, char * aArg[] )
                           gnHeight = t;
     }
 
-    char     filenameBMP[256];
-#if DEBUG
-    sprintf( filenameBMP, "%s_%dx%d_depth_%d_maxbright_%d_autobright_%d_scale_%dx.bmp"
-       , pBaseName, gnWidth, gnHeight, gnMaxDepth, nMaxBrightness (int)gbAutoBrightness, gnScale );
-#else
-    sprintf( filenameBMP, "%s_%dx%d_%d.bmp", pBaseName, gnWidth, gnHeight, gnMaxDepth );
-#endif
+    if( gbSaveBMP )
+    {
+        if( gpFileNameBMP )
+            Text_CopyFileName( filenameBMP, gpFileNameBMP, PATH_SIZE-1 ); 
+        else
+            sprintf( filenameBMP, "%s_%dx%d_%d.bmp", pBaseName, gnWidth, gnHeight, gnMaxDepth );
 
-    Image_Greyscale16bitToColor24bit( pRotatedTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
-    BMP_WriteColor24bit( filenameBMP, gpChromaticTexels, gnWidth, gnHeight );
-    printf( "Saved: %s\n", filenameBMP );
+        Image_Greyscale16bitToColor24bit( pRotatedTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
+        BMP_WriteColor24bit( filenameBMP, gpChromaticTexels, gnWidth, gnHeight );
+        printf( "Saved: %s\n", filenameBMP );
+    }
 
     return 0;
 }

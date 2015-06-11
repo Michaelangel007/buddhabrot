@@ -6,7 +6,7 @@
     Based on the original version by Evercat
 
         g++ -Wall -O2 buddhabrot.cpp -o buddhabrot
-        ./bin/buddhabrot 3000 4000 20000
+        buddhabrot 4000 3000 20000
 
    Released under the GNU Free Documentation License
    or the GNU Public License, whichever you prefer.
@@ -20,12 +20,12 @@ There are 2 initial problems compiling with OpenMP under OSX.
 a) The default C/C++ compiler is llvm not gcc; llvm does not (yet) support OpenMP.
    The solution is to install and use gcc.
 
-   Install gcc 4.7 (or greater) from macports.org
+   Install gcc 4.7 (or greater) from MacPorts
+   https://www.macports.org/install.php
 
-    sudo port install gcc47
-    sudo port select gcc mp-gcc477
-
-   usr/local/bin/g++ --version
+        sudo port install gcc47
+        sudo port select gcc mp-gcc477
+        usr/local/bin/g++ --version
 
 b) Compiling with gcc you may get this error message:
 
@@ -36,11 +36,7 @@ b) Compiling with gcc you may get this error message:
 
 There are 2 solutions:
 
-1) Install gcc 4.7 (or greater) from macports.org
-
-    sudo port install gcc47
-    sudo port select gcc mp-gcc477
-    hash gcc
+1) Install gcc 4.7 (or greater) from MacPorts as documented above
 
 or
 
@@ -48,19 +44,21 @@ or
     #include <pthread.h> // required on OSX 10.8
     pthread_attr_t gomp_thread_attr;
 
-To find out where OpenMP's header is:
-  cd /
-  sufo find . -name omp.h
+   To find out where OpenMP's header is:
 
-Default on XCode 4.6 + Command Line Tools
-    /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin10/4.2.1/include/omp.h
-    /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
-    /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
-    /Applications/Xcode.app/Contents/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
+        sudo find / -name omp.h
 
-If you have installed gcc:
-    /user/local/lib/gcc/x86_64-apple-darwin14.0.0/4.9.2/include/omp.h
-    /user/local/lib/gcc/x86_64-apple-darwin14.0.0/5.0.0/include/omp.h
+   Default on XCode 4.6 + Command Line Tools
+
+        /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin10/4.2.1/include/omp.h
+        /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
+        /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
+        /Applications/Xcode.app/Contents/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
+
+   If you have installed gcc:
+
+        /user/local/lib/gcc/x86_64-apple-darwin14.0.0/4.9.2/include/omp.h
+        /user/local/lib/gcc/x86_64-apple-darwin14.0.0/5.0.0/include/omp.h
 
 Also see:
 
@@ -103,6 +101,7 @@ Also see:
     bool      gbVerbose          = false;
     bool      gbSaveRawGreyscale = true ;
     bool      gbRotateOutput     = true ;
+    bool      gbSaveBMP          = true ;
 
     // Calculated/Cached
     uint32_t  gnImageArea        =    0; // image width * image height
@@ -113,6 +112,9 @@ Also see:
 
     const int BUFFER_BACKSPACE   = 64;
     char      gaBackspace[ BUFFER_BACKSPACE ];
+
+    char     *gpFileNameBMP      = 0; // user over-ride default?
+    char     *gpFileNameRAW      = 0; // user over-ride default?
 
 // BEGIN OMP
     // The single 16-bit brightness buffer is a shared resource
@@ -599,27 +601,51 @@ int Usage()
         ,"ON "
     };
 
+    const char *aSaved[2] =
+    {
+         "SKIP"
+        ,"SAVE"
+    };
+
     printf(
 "Buddhabrot (OMP) by Michael Pohoreski\n"
 "https://github.com/Michaelangel007/buddhabrot\n"
 "Usage: [width [height [depth [scale]]]]\n"
 "\n"
-"-?   Display usage help\n"
-"-b   Use auto brightness\n"
+"-?       Display usage help\n"
+"-b       Use auto brightness\n"
+"-bmp foo Save .BMP as filename foo\n"
 // BEGIN OMP
-"-j#  Use this # of threads. (Default: %d)\n"
+"-j#      Use this # of threads. (Default: %d)\n"
 // END OMP
-"-r   Turn %s rotation of output bitmap 90 degrees right\n"
-"-raw Turn %s saving raw 16-bit image\n"
-"-v   Verbose.  Display %% complete\n"
+"--no-bmp Don't save .BMP  (Default: %s)\n"
+"--no-raw Don't save .data (Default: %s)\n"
+"--no-rot Don't rotate BMP (Default: %s)\n"
+"-r       Rotation output bitmap 90 degrees right\n"
+"-raw foo Save raw greyscale as foo\n"
+"-v       Verbose.  Display %% complete\n"
 // BEGIN OMP
         , gnThreadsMaximum
 // END OMP
-        , aOffOn[ (int) !gbRotateOutput     ]
-        , aOffOn[ (int) !gbSaveRawGreyscale ]
+        , aSaved[ (int) gbSaveBMP          ]
+        , aOffOn[ (int) gbRotateOutput     ]
+        , aOffOn[ (int) gbSaveRawGreyscale ]
     );
 
     return 0;
+}
+
+
+// ========================================================================
+void Text_CopyFileName( char *buffer, const char *source, const size_t maxlen )
+{
+    size_t  nLen = strlen( source );
+
+    if( nLen >  maxlen )
+        nLen =  maxlen ;
+
+    strncpy( buffer, source, nLen );
+    buffer[ nLen ] = 0;
 }
 
 
@@ -645,11 +671,38 @@ int main( int nArg, char * aArg[] )
                 iArg++;
                 pArg++; // point to 1st char in option
 
+                if( strcmp( pArg, "--no-bmp" ) == 0 )
+                    gbSaveBMP = false;
+                else 
+                if( strcmp( pArg, "--no-raw" ) == 0 )
+                    gbSaveRawGreyscale = false;
+                else 
+                if( strcmp( pArg, "--no-rot" ) == 0 )
+                    gbRotateOutput = false;
+                else 
                 if( *pArg == '?' )
                     return Usage();
                 else
-                if( *pArg == 'b' )
+                if( *pArg == 'b' && (strcmp( pArg, "bmp") != 0) ) // -b and -bmp
                     gbAutoBrightness = true;
+                else
+                if( strcmp( pArg, "bmp" ) == 0 )
+                {
+                    int n = iArg+1; 
+                    if( n < nArg )
+                    {
+                        iArg++;
+                        pArg = aArg[ n ];
+                        gpFileNameBMP = pArg;
+
+                        n = iArg + 1;
+                        if( n < nArg )
+                        {
+                            pArg = aArg[ n ] - 1; 
+                            *pArg = 0; 
+                       }
+                    }
+                }
                 else
 // BEGIN OMP
                 if( *pArg == 'j' )
@@ -660,14 +713,29 @@ int main( int nArg, char * aArg[] )
                 }
                 else
 // END OMP
-                if( *pArg == 'r' && (strcmp( pArg, "raw") != 0)) // -r and -raw
-                    gbRotateOutput = false;
+                if( *pArg == 'r' && (strcmp( pArg, "raw") != 0) ) // -r and -raw
+                    gbRotateOutput = true;
                 else
                 if( *pArg == 'v' )
                     gbVerbose = true;
                 else
                 if( strcmp( pArg, "raw" ) == 0 )
-                    gbSaveRawGreyscale = false;
+                {
+                    int n = iArg+1; 
+                    if( n < nArg )
+                    {
+                        iArg++;
+                        pArg = aArg[ n ];
+                        gpFileNameRAW = pArg;
+
+                        n = iArg + 1;
+                        if( n < nArg )
+                        {
+                            pArg = aArg[ n ] - 1; 
+                            *pArg = 0; 
+                       }
+                    }
+                }
                 else
                     printf( "Unrecognized option: %c\n", *pArg ); 
             }
@@ -707,12 +775,18 @@ int main( int nArg, char * aArg[] )
     int nMaxBrightness = Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
     printf( "Max brightness: %d\n", nMaxBrightness );
 
+    const int PATH_SIZE = 256;
     const char *pBaseName = "omp3_buddhabrot";
+    /* */ char filenameRAW[ PATH_SIZE ];
+    /* */ char filenameBMP[ PATH_SIZE ];
 
     if( gbSaveRawGreyscale )
     {
-        char     filenameRAW[ 256 ];
-        sprintf( filenameRAW, "raw_%s_%dx%d_%d_%dx.u16.data", pBaseName, gnWidth, gnHeight, gnMaxDepth, gnScale );
+        if( gpFileNameRAW )
+            Text_CopyFileName( filenameRAW, gpFileNameRAW, PATH_SIZE-1 ); 
+        else
+            sprintf( filenameRAW, "raw_%s_r%dx%d_d%d_s%d_j%d.u16.data"
+                , pBaseName, gnWidth, gnHeight, gnMaxDepth, gnScale, gnThreadsActive );
 
         RAW_WriteGreyscale16bit( filenameRAW, gpGreyscaleTexels, gnWidth, gnHeight );
         printf( "Saved: %s\n", filenameRAW );
@@ -730,17 +804,17 @@ int main( int nArg, char * aArg[] )
                           gnHeight = t;
     }
 
-    char     filenameBMP[256];
-#if DEBUG
-    sprintf( filenameBMP, "%s_%dx%d_depth_%d_maxbright_%d_autobright_%d_scale_%dx.bmp"
-       , pBaseName, gnWidth, gnHeight, gnMaxDepth, nMaxBrightness (int)gbAutoBrightness, gnScale );
-#else
-    sprintf( filenameBMP, "%s_%dx%d_%d.bmp", pBaseName, gnWidth, gnHeight, gnMaxDepth );
-#endif
+    if( gbSaveBMP )
+    {
+        if( gpFileNameBMP )
+            Text_CopyFileName( filenameBMP, gpFileNameBMP, PATH_SIZE-1 ); 
+        else
+            sprintf( filenameBMP, "%s_%dx%d_%d.bmp", pBaseName, gnWidth, gnHeight, gnMaxDepth );
 
-    Image_Greyscale16bitToColor24bit( pRotatedTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
-    BMP_WriteColor24bit( filenameBMP, gpChromaticTexels, gnWidth, gnHeight );
-    printf( "Saved: %s\n", filenameBMP );
+        Image_Greyscale16bitToColor24bit( pRotatedTexels, gnWidth, gnHeight, gpChromaticTexels, gnGreyscaleBias, gnScaleR, gnScaleG, gnScaleB );
+        BMP_WriteColor24bit( filenameBMP, gpChromaticTexels, gnWidth, gnHeight );
+        printf( "Saved: %s\n", filenameBMP );
+    }
 
     return 0;
 }
