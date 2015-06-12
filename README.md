@@ -38,18 +38,29 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 # Compiling
 
-You will need a compiler that supports OpenMP. On Windows, Microsoft supports OpenMP 2.0 (but no later version.)  Apple switched from `gcc` (which does) to `llvm` (which does not.) See `buddabrot_omp1.cpp` for details on how to install gcc.
+You will need compilers that supports OpenMP, CUDA, and OpenCL.
 
 On Linux or OSX type: `make` The makefile will detect the OS and use the right flags.  Note that the CUDA versions are NOT built by default, you must use `make cuda`
 
-For Windows, a MSVC (Microsoft Visual C) solution and project files will be provided soon.
+## Windows
+
+On Windows a MSVC (Microsoft Visual C++) solution and project are provided in `build/`. Currently MSVC 2010 Express is available under `build/Buddhabrot_MSVC2010Express.sln`
+
+Note: If you wish to use OpenMP with Microsoft's compiler, they in typical fashion, only supports OpenMP 2.0 (but no later version.)
+
+If you try to use MSVC 2010 Express edition to build the OpenMP code Microsoft's compiler will generate OpenMP code BUT the required header and library files are not present.  They will be provided as a convenience soon.
+
+## OSX
+
+Apple switched from `gcc` (which does) to `llvm` (which does not.) See `buddabrot_omp1.cpp` for details on how to install gcc.
+
 
 
 # Running
 
 To run the single threaded version `bin/buddhabrot`
 
-To run the multi-threaded version `bin/omp3`
+To run the multi-threaded version `bin/omp4`
 
 One can specify a custom resolution. If you change specify the width and height it is highly recommended you keep the aspect ratio of 4:3. e.g. `bin/omp3 4000 3000`
 
