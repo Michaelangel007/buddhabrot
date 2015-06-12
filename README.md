@@ -38,22 +38,72 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 # Compiling
 
-You will need compilers that supports OpenMP, CUDA, and OpenCL.
-
-On Linux or OSX type: `make` The makefile will detect the OS and use the right flags.  Note that the CUDA versions are NOT built by default, you must use `make cuda`
+You will need a compiler that supports OpenMP. (And eventually C++14, CUDA, and OpenCL.)
 
 ## Windows
 
-On Windows a MSVC (Microsoft Visual C++) solution and project are provided in `build/`. Currently MSVC 2010 Express is available under `build/Buddhabrot_MSVC2010Express.sln`
+On Windows a MSVC (Microsoft Visual C++) solution and project are provided in `build/`. Currently a MSVC 2010 Express solution is available under `build/Buddhabrot_MSVC2010Express.sln`
 
-Note: If you wish to use OpenMP with Microsoft's compiler, they in typical fashion, only supports OpenMP 2.0 (but no later version.)
+If you try to use MSVC 2010 Express edition to build the OpenMP code note that the Express edition **can** generate OpenMP code BUT the required header and library files are not present out-of-the-box!  They will be provided soon as a convenience.
 
-If you try to use MSVC 2010 Express edition to build the OpenMP code Microsoft's compiler will generate OpenMP code BUT the required header and library files are not present.  They will be provided as a convenience soon.
+Note: If you wish to use various OpenMP's directives `#pragma omp` with Microsoft's compiler, they in typical fashion, only support OpenMP 2.0 (and no later versions.)
 
 ## OSX
 
-Apple switched from `gcc` (which does) to `llvm` (which does not.) See `buddabrot_omp1.cpp` for details on how to install gcc.
+To build type: `make` The makefile will detect the OS and use the right flags.  Note that the CUDA versions are NOT built by default, you must use `make cuda`
 
+For OpenMP support under OSX, Apple switched from the default compiler from `gcc` (which does) to `llvm` (which does not.) Here are the details and instructions on how to install `gcc` and get OpenMP support:
+
+    * OpenMP On OSX (10.8, 10.9) 
+
+    There are 2 initial problems compiling with OpenMP under OSX.
+
+    a) The default C/C++ compiler is llvm not gcc; llvm does not (yet) support OpenMP.
+       The solution is to install and use gcc.
+
+       Install gcc 4.7 (or greater) from MacPorts
+       https://www.macports.org/install.php
+
+            sudo port install gcc47
+            sudo port select gcc mp-gcc477
+            usr/local/bin/g++ --version
+
+    b) Compiling with gcc you may get this error message:
+
+        Undefined symbols for architecture x86_64:
+          "_gomp_thread_attr", referenced from:
+              _initialize_env in libgomp.a(env.o)
+        ld: symbol(s) not found for architecture x86_64
+
+    There are 2 solutions:
+
+    1) Install gcc 4.7 (or greater) from MacPorts as documented above
+
+    or
+
+    2) Add the global thread symbol for gomp (Gnu OpenMP)
+        #include <pthread.h> // required on OSX 10.8
+        pthread_attr_t gomp_thread_attr;
+
+       To find out where OpenMP's header is:
+
+            sudo find / -name omp.h
+
+       Default on XCode 4.6 + Command Line Tools
+
+            /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin10/4.2.1/include/omp.h
+            /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
+            /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
+            /Applications/Xcode.app/Contents/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
+
+       If you have installed gcc:
+
+            /user/local/lib/gcc/x86_64-apple-darwin14.0.0/4.9.2/include/omp.h
+            /user/local/lib/gcc/x86_64-apple-darwin14.0.0/5.0.0/include/omp.h
+
+# Linux
+
+See the OSX instructions for `make`
 
 
 # Running

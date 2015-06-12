@@ -10,58 +10,6 @@
 
    Released under the GNU Free Documentation License
    or the GNU Public License, whichever you prefer.
-
-= OMP =
-
-* OpenMP On OSX (10.8, 10.9) 
-
-There are 2 initial problems compiling with OpenMP under OSX.
-
-a) The default C/C++ compiler is llvm not gcc; llvm does not (yet) support OpenMP.
-   The solution is to install and use gcc.
-
-   Install gcc 4.7 (or greater) from MacPorts
-   https://www.macports.org/install.php
-
-        sudo port install gcc47
-        sudo port select gcc mp-gcc477
-        usr/local/bin/g++ --version
-
-b) Compiling with gcc you may get this error message:
-
-    Undefined symbols for architecture x86_64:
-      "_gomp_thread_attr", referenced from:
-          _initialize_env in libgomp.a(env.o)
-    ld: symbol(s) not found for architecture x86_64
-
-There are 2 solutions:
-
-1) Install gcc 4.7 (or greater) from MacPorts as documented above
-
-or
-
-2) Add the global thread symbol for gomp (Gnu OpenMP)
-    #include <pthread.h> // required on OSX 10.8
-    pthread_attr_t gomp_thread_attr;
-
-   To find out where OpenMP's header is:
-
-        sudo find / -name omp.h
-
-   Default on XCode 4.6 + Command Line Tools
-
-        /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin10/4.2.1/include/omp.h
-        /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
-        /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.7.sdk/usr/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
-        /Applications/Xcode.app/Contents/Developer/usr/llvm-gcc-4.2/lib/gcc/i686-apple-darwin11/4.2.1/include/omp.h
-
-   If you have installed gcc:
-
-        /user/local/lib/gcc/x86_64-apple-darwin14.0.0/4.9.2/include/omp.h
-        /user/local/lib/gcc/x86_64-apple-darwin14.0.0/5.0.0/include/omp.h
-
-Also see:
-
 */
 
 // Includes
