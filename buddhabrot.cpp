@@ -24,7 +24,7 @@
     #include <string.h> // memset()
 
 #ifdef _MSC_VER
-    // stupid MS ingoring standards yet again
+    // stupid MS ignoring standards yet again
     // http://stackoverflow.com/questions/2915672/snprintf-and-visual-studio-2010
     #define snprintf _snprintf
 #endif

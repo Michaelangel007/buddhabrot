@@ -12,6 +12,10 @@
    or the GNU Public License, whichever you prefer.
 */
 
+#if _WIN32
+    #define _CRT_SECURE_NO_WARNINGS 1
+#endif
+
 // Includes
     #include <stdio.h>
     #include <stdlib.h>
@@ -21,6 +25,12 @@
 // BEGIN OMP
     #include <omp.h>
 // END OMP
+
+#ifdef _MSC_VER
+    // stupid MS ignoring standards yet again
+    // http://stackoverflow.com/questions/2915672/snprintf-and-visual-studio-2010
+    #define snprintf _snprintf
+#endif
 
 // Macros
     #define VERBOSE if(gbVerbose)
@@ -42,9 +52,9 @@
     // Default MaxDepth = 1000 @ 1042x768 has a maximum greyscale intensity = 5010 -> 230/5010 = filter out bottom 4.590808% of image as black
     int       gnGreyscaleBias    = -230; // color pixel = (greyscale pixel + bias) * scale = 5010 - 230 = 4780
 
-    float     gnScaleR           = 0.09; // Default: (5010 - 230) * 0.09 = 430.2
-    float     gnScaleG           = 0.11; // Default: (5010 - 230) * 0.11 = 525.8
-    float     gnScaleB           = 0.18; // Default: (5010 - 230) * 0.18 = 860.4
+    float     gnScaleR           = 0.09f; // Default: (5010 - 230) * 0.09 = 430.2
+    float     gnScaleG           = 0.11f; // Default: (5010 - 230) * 0.11 = 525.8
+    float     gnScaleB           = 0.18f; // Default: (5010 - 230) * 0.18 = 860.4
 
     bool      gbVerbose          = false;
     bool      gbSaveRawGreyscale = true ;
@@ -146,9 +156,14 @@
         timeval start, end; // Windows: winsock2.h  Unix: sys/time.h 
     public:
         double   elapsed; // total seconds
-        uint32_t mins;
-        uint32_t secs;
+        uint8_t  secs;
+        uint8_t  mins;
+        uint8_t  hour;
+        uint32_t days;
+
         DataRate throughput;
+        char     day[ 16 ]; // output
+        char     hms[ 12 ]; // output
 
         void Start()
         {
@@ -160,8 +175,17 @@
             gettimeofday( &end, NULL );
             elapsed = (end.tv_sec - start.tv_sec);
 
-            mins = (uint32_t)elapsed / 60;
-            secs = (uint32_t)elapsed - (mins*60);
+            size_t s = elapsed;
+            secs = s % 60; s /= 60;
+            mins = s % 60; s /= 60;
+            hour = s % 24; s /= 24;
+            days = s;
+
+            day[0] = 0;
+            if( days > 0 )
+                snprintf( day, 15, "%d day%s, ", days, (days == 1) ? "" : "s" );
+
+            sprintf( hms, "%02d:%02d:%02d", hour, mins, secs );
         }
 
         // size is number of bytes in a file, or number of iterations that you want to benchmark
@@ -359,9 +383,9 @@ Image_Greyscale16bitToBrightnessBias( int* bias_, float* scaleR_, float* scaleG_
         // TODO: if bright < 256 should this be adjusted?
         *bias_ = (int)(-0.045 * nMaxBrightness); // low-pass noise filter; if greyscale pixel < bias then greyscale pixel = 0
 
-        *scaleR_ = 430. / (float)nMaxBrightness;
-        *scaleG_ = 525. / (float)nMaxBrightness;
-        *scaleB_ = 860. / (float)nMaxBrightness;
+        *scaleR_ = 430.f / (float)nMaxBrightness;
+        *scaleG_ = 525.f / (float)nMaxBrightness;
+        *scaleB_ = 860.f / (float)nMaxBrightness;
     }
 
     return nMaxBrightness;
@@ -750,11 +774,12 @@ int main( int nArg, char * aArg[] )
 
     VERBOSE printf( "100.00%%\n" );
     stopwatch.Throughput( nCells ); // Calculate throughput in pixels/s
-    printf( "%d %cpix/s (%d pixels, %.f seconds = %d:%02d)\n"
+    printf( "%d %cpix/s (%d pixels, %.f seconds = %s%s)\n"
         , (int)stopwatch.throughput.per_sec, stopwatch.throughput.prefix
         , nCells
         , stopwatch.elapsed
-        , stopwatch.mins, stopwatch.secs
+        , stopwatch.day
+        , stopwatch.hms
     );
 
     int nMaxBrightness = Image_Greyscale16bitToBrightnessBias( &gnGreyscaleBias, &gnScaleR, &gnScaleG, &gnScaleB ); // don't need max brightness
