@@ -1,9 +1,10 @@
 # https://github.com/Michaelangel007/buddhabrot
 
-all: bin/buddhabrot \
-     bin/omp1 bin/omp2 bin/omp3 bin/omp3float bin/omp4 \
+all: bin/buddhabrot                                            \
+     bin/omp1 bin/omp2 bin/omp3 bin/omp3float bin/omp4         \
      bin/evercat bin/raw2bmp bin/mandelbrot bin/mandelbrot_omp \
-     bin/text_mandelbrot bin/text_buddhabrot
+     bin/text_mandelbrot bin/text_buddhabrot                   \
+     bin/c11
 
 omp: bin/omp1
 cuda: bin/cuda bin/cuda_info
@@ -47,6 +48,7 @@ endif
 MAKE_BIN_DIR=mkdir -p bin
 
 LIB_OMP=-fopenmp
+LIB_C11=-std=c++11 -lstdc++
 
 # You may need to link with the the Standard C++ libary
 #    -lstdc++
@@ -99,6 +101,11 @@ bin/omp3: buddhabrot_omp3.cpp
 bin/omp4: buddhabrot_omp4.cpp
 	@$(MAKE_BIN_DIR)
 	$(CC) $(CFLAGS) $< -o $@ $(LIB_OMP)
+
+# C++11
+bin/c11: buddhabrot_c11.cpp
+	@$(MAKE_BIN_DIR)
+	$(CC) $(CFLAGS) $< -o $@ $(LIB_C11)
 
 # Multi Core (OpenMP) Float
 bin/omp3float: buddhabrot_omp3float.cpp
