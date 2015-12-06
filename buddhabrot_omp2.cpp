@@ -78,7 +78,7 @@
     // The single 16-bit brightness buffer is a shared resource
     // We would incur a major performance penalty via atomic access
     // to keep it in sync amongst the various threads
-    // Instead, we give each thread its own indepent copy
+    // Instead, we give each thread its own independent copy
     // Afterwards, we will merge (add) all copies back into a single brightness buffer
     int       gnThreadsMaximum = 0 ;
     int       gnThreadsActive  = 0 ; // 0 = auto detect; > 0 manual # of threads
@@ -761,7 +761,7 @@ int main( int nArg, char * aArg[] )
 
 // BEGIN OMP
     printf( "Using: %d / %d cores\n", gnThreadsActive, gnThreadsMaximum );
-// ENDMP
+// END OMP
 
     Timer stopwatch;
     stopwatch.Start();
