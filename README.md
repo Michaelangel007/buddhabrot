@@ -2,6 +2,23 @@
 
 Single threaded (CPU), multi-threaded OpenMP (CPU), multi-threaded C++14 (CPU) {forthcoming}, multi-core using CUDA (GPU) {forthcoming}, and multi-core using OpenCL {forthcoming}, versions of [Buddhabrot](http://en.wikipedia.org/wiki/Buddhabrot)
 
+Here is how depth effects the final image:
+
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@256.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@512.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@1K.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@2K.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@4K.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@8K.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@16K.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@32K.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@64K.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@128K.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@256K.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@512K.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@1M.png">
+
+
 This 2,160x2,880 at 32,768 depth [image](https://github.com/Michaelangel007/buddhabrot/blob/master/data/buddhabrot_2160x2880_32768.bmp) took 42 minutes on an i7 utilizing all 8 cores.
 
 Here is a "thumbnail" at 1/2 size: 1080x1440
