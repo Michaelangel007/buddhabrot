@@ -4,18 +4,31 @@ Single threaded (CPU), multi-threaded OpenMP (CPU), multi-threaded C++14 (CPU) {
 
 Here is how depth effects the final image:
 
+<br>Depth 256
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@256.png">
+<br>Depth 512
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@512.png">
+<br>Depth 1,024
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@1K.png">
+<br>Depth 2,048
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@2K.png">
+<br>Depth 4,096
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@4K.png">
+<br>Depth 8,192
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@8K.png">
+<br>Depth 16,384
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@16K.png">
+<br>Depth 32,768
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@32K.png">
+<br>Depth 65,536
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@64K.png">
+<br>Depth 131,072
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@128K.png">
+<br>Depth 262,144
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@256K.png">
+<br>Depth 524,288
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@512K.png">
+<br>Depth 1,048,576
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@1M.png">
 
 
