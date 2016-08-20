@@ -20,7 +20,7 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 # Depth thumbnails
 
-Here is how depth effects the final image:
+The maximum depth effects how many finer details are visible. Here are some comparisons:
 
 <br><img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@256.png" > Depth 256
 <br><img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@512.png" > Depth 512
