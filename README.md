@@ -26,23 +26,23 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 # Status
 
-* Single threaded (CPU) -- done!
-* Multi-threaded OpenMP -- done!
-* `-j#` Use a maximum number of threads -- done!
-* `--no-bmp` Don't save BMP image -- done!
-* `--no-raw` Don't save raw image -- done!
-* `--no-rot` Don't rotate BMP -- done!
-* `-bmp foo.bmp` Save BMP with specified filename -- done!
-* `-raw bar.raw` save RAW with specified filename -- done!
+* [x] Single threaded (CPU)
+* [x] Multi-threaded OpenMP
+* [x] `-j#` Use a maximum number of threads
+* [x] `--no-bmp` Don't save BMP image
+* [x] `--no-raw` Don't save raw image
+* [x] `--no-rot` Don't rotate BMP
+* [x] `-bmp foo.bmp` Save BMP with specified filename
+* [x] `-raw bar.raw` save RAW with specified filename
 
-= TODO =
+# TODO
 
-* -h  Save partial histogram images
-* Exposure settings via: `raw2bmp -bias # -min # - max #`
-* MSVC solution and project -- not yet started
-* Multi-threaded C++14 -- not yet started
-* Multi-core CUDA -- not yet started
-* Multi-core OpenCL -- not yet started
+* [ ] `-h`  Save partial histogram images
+* [ ] Exposure settings via: `raw2bmp -bias # -min # - max #`
+* [ ] MSVC solution and project -- not yet started
+* [ ] Multi-threaded C++14 -- not yet started
+* [ ] Multi-core CUDA -- not yet started
+* [ ] Multi-core OpenCL -- not yet started
 
 | Type            | Linux    | OSX      | Windows | Filename         |
 |-----------------|----------|----------|---------|------------------|
