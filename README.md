@@ -10,7 +10,7 @@ Optimized [Buddhabrot](http://en.wikipedia.org/wiki/Buddhabrot) HDR image genera
 
 # Full image
 
-This 2,160x2,880 at 32,768 depth [image](https://github.com/Michaelangel007/buddhabrot/blob/master/data/buddhabrot_2160x2880_32768.bmp) took 42 minutes on an i7 utilizing all 8 cores.
+This 2,160x2,880 (6 Mega pixels) at 32,768 depth [image](https://github.com/Michaelangel007/buddhabrot/blob/master/data/buddhabrot_2160x2880_32768.bmp) took 42 minutes on an i7 utilizing all 8 cores.
 
 Here is a "thumbnail" at 1/2 size: 1080x1440
 
