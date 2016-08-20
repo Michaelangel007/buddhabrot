@@ -1,6 +1,12 @@
 # Buddhabrot
 
-Single threaded (CPU), multi-threaded OpenMP (CPU), multi-threaded C++14 (CPU) {forthcoming}, multi-core using CUDA (GPU) {forthcoming}, and multi-core using OpenCL {forthcoming}, versions of [Buddhabrot](http://en.wikipedia.org/wiki/Buddhabrot)
+Optimized [Buddhabrot](http://en.wikipedia.org/wiki/Buddhabrot) HDR image generators:
+
+* [x] Single threaded (CPU),
+* [x] multi-threaded OpenMP (CPU),
+* [ ] multi-threaded C++14 (CPU) {forthcoming}
+* [ ] multi-core using CUDA (GPU) {forthcoming},
+* [ ] and multi-core using OpenCL {forthcoming},
 
 # Depth thumbnails
 
