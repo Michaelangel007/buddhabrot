@@ -16,6 +16,8 @@ Here is a "thumbnail" at 1/2 size: 1080x1440
 
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/data/buddhabrot_1080x1440_32768.png">
 
+**Note**: The "blocky" look is due to under-sampling the image -- the max depth is not deep enough.
+
 # Depth thumbnails
 
 Here is how depth effects the final image:
