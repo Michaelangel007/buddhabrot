@@ -22,7 +22,41 @@ Here is how depth effects the final image:
 
 NOTE: These are HDR (High Dynamic Range) 16-bit / single channel images converted into SR (Standard Range) 8-bit / channel.
 
-# Full image 
+# HDR
+
+Can I view/edit the raw HDR images in Photoshop or GIMP?
+
+Yes for Photoshop, partially for GIMP.
+
+## Photoshop HDR
+
+* Rename the `.data` to `.raw`
+* File Open, and specify:
+ * Header: 0 (default)
+ * Channels: 1
+ * Width
+ * Height
+ * Depth: 16 Bits
+ * Byte Order: IMB PC (little endian)
+
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/photoshop_import_raw_1.png">
+
+The HDR image has a single channel. To produce a _false color_ image you'll need to manually do layer blends.
+
+## GIMP HDR
+
+* File Open, File Type: RAW, and specify:
+ * Offset: 0 (default)
+ * Width
+ * Height
+ * Image Type: RGB565
+ * Palette: n/a
+
+Unfortunately GIMP 2.8 is gimped -- it doesn't have proper 16-bit/channel support so you won't be able to view the monochrome HDR image, only a false 15-bit image.
+
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/gimp_import_data_1.png">
+
+# Full image
 
 This 2,160x2,880 at 32,768 depth [image](https://github.com/Michaelangel007/buddhabrot/blob/master/data/buddhabrot_2160x2880_32768.bmp) took 42 minutes on an i7 utilizing all 8 cores.
 
