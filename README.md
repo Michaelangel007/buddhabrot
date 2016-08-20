@@ -8,6 +8,14 @@ Optimized [Buddhabrot](http://en.wikipedia.org/wiki/Buddhabrot) HDR image genera
 * [ ] multi-core using CUDA (GPU) {forthcoming},
 * [ ] and multi-core using OpenCL {forthcoming},
 
+# Full image
+
+This 2,160x2,880 at 32,768 depth [image](https://github.com/Michaelangel007/buddhabrot/blob/master/data/buddhabrot_2160x2880_32768.bmp) took 42 minutes on an i7 utilizing all 8 cores.
+
+Here is a "thumbnail" at 1/2 size: 1080x1440
+
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/data/buddhabrot_1080x1440_32768.png">
+
 # Depth thumbnails
 
 Here is how depth effects the final image:
@@ -61,14 +69,6 @@ The HDR image has a single channel. To produce a _false color_ image you'll need
 Unfortunately GIMP 2.8 is gimped -- it doesn't have proper 16-bit/channel support so you won't be able to view the monochrome HDR image, only a false 15-bit image.
 
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/gimp_import_data_1.png">
-
-# Full image
-
-This 2,160x2,880 at 32,768 depth [image](https://github.com/Michaelangel007/buddhabrot/blob/master/data/buddhabrot_2160x2880_32768.bmp) took 42 minutes on an i7 utilizing all 8 cores.
-
-Here is a "thumbnail" at 1/2 size: 1080x1440
-
-<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/data/buddhabrot_1080x1440_32768.png">
 
 # Status
 
