@@ -36,7 +36,7 @@ The maximum depth effects how many finer details are visible. Here are some comp
 <br><img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@512K.png"> Depth 524,288
 <br><img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@1M.png"  > Depth 1,048,576
 
-NOTE: These are HDR (High Dynamic Range) 16-bit / single channel images converted into SR (Standard Range) 8-bit / channel.
+NOTE: These are HDR (High Dynamic Range) 16-bit single channel images (monochrome) converted into a SR (Standard Range) 8-bit / channel "false color" image.
 
 # HDR
 
