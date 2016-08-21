@@ -10,17 +10,17 @@ Optimized [Buddhabrot](http://en.wikipedia.org/wiki/Buddhabrot) HDR image genera
 
 # Full image
 
-This 2,160x2,880 (6 Mega pixels) at 32,768 depth [image](https://github.com/Michaelangel007/buddhabrot/blob/master/data/buddhabrot_2160x2880_32768.bmp) took 42 minutes on an i7 utilizing all 8 cores.
+This 4,500 x 6000 (27 Mega pixels!) at 524,288 depth [image](https://github.com/Michaelangel007/buddhabrot/blob/master/pics/4500x6000/ps_7F9CFF_buddhabrot_4500x6000_512Kd.png) took 1 day, 18 hours on MacBook Pro (i7 @ 2.8 GHz) utilizing all 8 cores.
 
-Here is a "thumbnail" at 1/2 size: 1080x1440
+Here is a "thumbnail" at 30% size (1350x1800):
 
-<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/data/buddhabrot_1080x1440_32768.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/1350x1800/ps_7F9CFF_buddhabrot_1350x1800_512Kd.png">
 
-**Note**: The "blocky" look is due to under-sampling the image -- the max depth is not deep enough.
+**Note**: If low resolution images have a "blocky" look that is due to under-sampling the image -- the max depth is not deep enough.
 
 # Depth thumbnails
 
-The maximum depth effects how many finer details are visible. Here are some comparisons:
+The maximum depth effects how many finer details are visible. Here are some depth comparisons:
 
 <br><img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@256.png" > Depth 256
 <br><img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/400x300/400x300@512.png" > Depth 512
