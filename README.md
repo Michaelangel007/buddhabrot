@@ -103,6 +103,8 @@ i.e.
 
 You'll want to save and then export to an 8-bit !
 
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/thumbnail_0080FF_buddhabrot_1350x1800_512Kd.png">
+
 
 Alternatively, you could also use 32 bits/channel preview
 
