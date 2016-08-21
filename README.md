@@ -14,7 +14,7 @@ This 4,500 x 6000 (27 Mega pixels!) at 524,288 depth [image](https://github.com/
 
 Here is a "thumbnail" at 30% size (1350x1800):
 
-<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/1350x1800/ps_7F9CFF_buddhabrot_1350x1800_512Kd.png">
+<img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/1350x1800/thumbnail_7F9CFF_buddhabrot_1350x1800_512Kd.png">
 
 **Note**: If low resolution images have a "blocky" look that is due to under-sampling the image -- the max depth is not deep enough.
 
