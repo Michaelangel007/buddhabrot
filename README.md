@@ -46,18 +46,71 @@ Yes for Photoshop, partially for GIMP.
 
 ## Photoshop HDR
 
-* Rename the `.data` to `.raw`
+For example using the file `omp4_buddhabrot_6000x4500_d524288_s10_j8.u16.data`:
+
+* Copy the file and rename the extension from `.data` to `.raw`
 * File Open, and specify:
  * Header: 0 (default)
  * Channels: 1
- * Width
- * Height
+ * Width: 6000
+ * Height: 4500
  * Depth: 16 Bits
  * Byte Order: IMB PC (little endian)
 
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/photoshop_import_raw_1.png">
 
+* Image, Image Rotation, 90° CW
+* Image, Mode, RGB Color
+* Image, Adjustments, HDR Toning...
+ * Method: Local Adaptation
+  * Radius: 1
+  * Strength: 0.1
+ * Tone and Detail
+  * Gamma: 1 (or 2 for a little brighter)
+  * Exposure: -1 (or 0 for a little brighter)
+  * Detail: 0%
+ * Advanced
+  * Shadow: 0% (or -100% for a little deeper black)
+  * Highlight: 0%
+ * Tone Curve and Histogram
+  * Input: 11%
+  * Output: 0%
+  * Corner: Yes
+
 The HDR image has a single channel. To produce a _false color_ image you'll need to manually do layer blends.
+
+i.e.
+
+* Layer, New, Layer
+ * Name: Subtract Grey
+ * Mode: Subtract
+* Background Color:
+ * RGB: 7,7,7
+* Edit, Fill
+ * Use: Background Color
+ * Blending: Normal
+ * Opacity: 100%
+
+* Layer, New, Layer
+ * Name: Colorize
+ * Mode: Overlay
+* Foreground Color
+ * RGB: #0080FF (Or for a slightly brighter blue #7F9CFF)
+* Edit, Fill
+ * Use: Foreground Color
+ * Blending: Normal
+ * Opacity: 100%
+
+You'll want to save and then export to an 8-bit !
+
+
+Alternatively, you could also use 32 bits/channel preview
+
+* Image, Mode, 32 bits/channel
+* View, 32-Bit Preview Options...
+ * Exposure: 7
+ * Gamma: 2
+
 
 ## GIMP HDR
 
