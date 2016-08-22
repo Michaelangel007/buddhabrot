@@ -55,7 +55,7 @@ For example using the file `omp4_buddhabrot_6000x4500_d524288_s10_j8.u16.data`:
  * Width: 6000
  * Height: 4500
  * Depth: 16 Bits
- * Byte Order: IMB PC (little endian)
+ * Byte Order: IBM PC (Little Endian)
 
 <img src="https://raw.githubusercontent.com/Michaelangel007/buddhabrot/master/pics/photoshop_import_raw_1.png">
 
