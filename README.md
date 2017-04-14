@@ -411,6 +411,56 @@ File: [text_mandelbrot.cpp](https://github.com/Michaelangel007/buddhabrot/blob/m
             return 0;
         }
 
+Which produces this output:
+
+```
+..........,,,,,,,cccccccccccccccccccccccc888888888MMM@jprajwaM888888cccccc,,,
+.........,,,,,,,ccccccccccccccccccccccc8888888888MMM@@jwoOQrj@M8888888cccccc,
+.........,,,,,cccccccccccccccccccccccc8888888888MMMM@jaroEpaj@MM8888888cccccc
+........,,,,,ccccccccccccccccccccccc8888888888MMMM@@aOrOJ .raj@MMM888888ccccc
+.......,,,,,cccccccccccccccccccccc88888888888MMM@@@wQQGa  MO8w@MMMMM88888cccc
+.......,,,ccccccccccccccccccccccc8888888888MMM@@@jjarP      @wj@@MMMMM8888ccc
+......,,,cccccccccccccccccccccc8888888888MM@@@@@jjawo@      Qwaj@@@@MMMM88ccc
+......,,cccccccccccccccccccccc88888888MMM@aaaraaawwrpQ     Ogrwwaj@@@@wjM88cc
+.....,,,cccccccccccccccccccc8888888MMMMM@jrpjgrro8EQcr@.  oM.PJgEraajapr@M88c
+.....,,ccccccccccccccccccc888888MMMMMM@@@jQQjgrOQQE            p grp8ogg8MM8c
+....,,ccccccccccccccccccc8888MMMMMMMM@@@jawGP  c                 g..  rgwMM88
+....,ccccccccccccccccc8888MMMMMMMMMM@@@jawrgGP                        crj@MM8
+....,ccccccccccccccc888MMMMMMMMMMM@@@@jwOgQo                         Epaj@MM8
+...,cccccccccccc88888Mja@@@@@@@@@@@jjjawOM                            ,waj@M8
+...,cccccccc8888888MM@jwaajjjaoajjjjjaarPP                            OOpPjM8
+...cccccc88888888MMM@@aoorrwwrOrwwaaawro                                 JjM8
+...cccc88888888MMMMM@@jwpJJPggPOO8pwwrpp                               jpa@M8
+..,cc888888888MMMMMM@jjwr.  @     .Epogp                                og@M8
+..cc888888888MMMMMM@jjapoPg        GjOE                                pww@M8
+..c88888888MMMMMM@aaawrgQr           ,.                                oQjMM8
+..c8888888M@@@@@jjaGpggP              w                                Oa@MM8
+..8MMMMM@j@@@@jjjwwo@wGc              a                               Jwj@MM8
+..MM@@jjrgwawwawpggOJ                                                .wj@@MM8
+..MM@@jjrgwawwawpggOJ                                                .wj@@MM8
+..8MMMMM@j@@@@jjjwwo@wGc              a                               Jwj@MM8
+..c8888888M@@@@@jjaGpggP              w                                Oa@MM8
+..c88888888MMMMMM@aaawrgQO           ,.                                oQjMM8
+..cc888888888MMMMMM@jjapoPg        GjOE                                pww@M8
+..,cc888888888MMMMMM@jjwr.  @     .Epogp                                og@M8
+...cccc88888888MMMMM@@jwpJJPggPOO8pwwrpp                               rpa@M8
+...cccccc88888888MMM@@aoorrwwrOrwwaaawro                                 JjM8
+...,cccccccc8888888MM@jwaajjjaoajjjjjaarPP                            OOpPjM8
+...,cccccccccccc88888Mja@@@@@@@@@@@jjjawOM                            ,waj@M8
+....,ccccccccccccccc888MMMMMMMMMMM@@@@jwOgQo                         Epaj@MM8
+....,ccccccccccccccccc8888MMMMMMMMMM@@@jawrgGP                        crj@MM8
+....,,ccccccccccccccccccc8888MMMMMMMM@@@jawGP  c                 g..  rgwMM88
+.....,,ccccccccccccccccccc888888MMMMMM@@@jQQjgrOQQE            p grp8ogg8MM8c
+.....,,,cccccccccccccccccccc8888888MMMMM@jrpjgrro8EQcr@.  oM.PJgEraajapr@M88c
+......,,cccccccccccccccccccccc88888888MMM@aaaraaawwrpQ     Ogrwwaj@@@@wjM88cc
+......,,,cccccccccccccccccccccc8888888888MM@@@@@jjawo@      Qwaj@@@@MMMM88ccc
+.......,,,ccccccccccccccccccccccc8888888888MMM@@@jjarP      @wj@@MMMMM8888ccc
+.......,,,,,cccccccccccccccccccccc88888888888MMM@@@wQQGa  MO8w@MMMMM88888cccc
+........,,,,,ccccccccccccccccccccccc8888888888MMMM@@aOrOJ .raj@MMM888888ccccc
+.........,,,,,cccccccccccccccccccccccc8888888888MMMM@jaroEpaj@MM8888888cccccc
+```
+
+
 Note: The original code used a costly square root with `std::abs(z) > 2` in MandelbrotCalculate().  The very first things we can do is optimize that out.
 
             for( depth = 0; depth < max_depth; ++depth )
