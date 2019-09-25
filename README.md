@@ -1404,8 +1404,8 @@ Parallelzing an algorithm is not always possible.  Sometimes we have to think "o
 * https://software.intel.com/en-us/node/527527
 * http://stackoverflow.com/questions/14016026/openmp-and-pragma-omp-atomic
 * http://stackoverflow.com/questions/1448318/omp-parallel-vs-omp-parallel-for
-* C++ Thread Librayr http://en.cppreference.com/w/cpp/thread
-* C++ Thread http://en.cppreference.com/w/cpp/thread/thread
+* C++ Thread Library -- http://en.cppreference.com/w/cpp/thread
+* C++ std::thread -- http://en.cppreference.com/w/cpp/thread/thread
 
 # Misc. Links
 
