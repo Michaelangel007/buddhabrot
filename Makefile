@@ -47,6 +47,20 @@ endif
 
 MAKE_BIN_DIR=mkdir -p bin
 
+# Shut GCC 6+ up about multi-column code on the same line
+#     if (a < min) a = min; if (a > max) a = max;
+CFLAGS += -Wno-misleading-indentation
+
+# main( argc, argv )
+CFLAGS += -Wno-unused-parameter
+
+# Shut GCC up about empty statement
+#     if( foo )
+#         bar;
+#     else
+#         ; // <-- warning
+CFLAGS += -Wno-empty-body
+
 LIB_OMP=-fopenmp
 LIB_C11=-std=c++11 -lstdc++
 
