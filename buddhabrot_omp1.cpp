@@ -690,7 +690,7 @@ int main( int nArg, char * aArg[] )
                 if( strcmp( pArg, "--no-rot" ) == 0 )
                     gbRotateOutput = false;
                 else 
-                if( *pArg == '?' )
+                if( (*pArg == '?') || (strcmp( pArg, "-help" ) == 0) )
                     return Usage();
                 else
                 if( *pArg == 'b' && (strcmp( pArg, "bmp") != 0) ) // -b and -bmp
