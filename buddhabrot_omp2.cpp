@@ -754,7 +754,7 @@ int main( int nArg, char * aArg[] )
     AllocImageMemory( gnWidth, gnHeight );
 
 // BEGIN OMP
-    printf( "Using: %d / %d cores\n", gnThreadsActive, gnThreadsMaximum );
+    printf( "Using: %u / %u threads\n", gnThreadsActive, gnThreadsMaximum );
 // END OMP
 
     Timer stopwatch;
