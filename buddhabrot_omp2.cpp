@@ -24,6 +24,7 @@
     #include <string.h> // memset()
 // BEGIN OMP
     #include <omp.h>
+    #include "util_threads.h"
 // END OMP
 
 #ifdef _MSC_VER
@@ -73,17 +74,6 @@
 
     char     *gpFileNameBMP      = 0; // user over-ride default?
     char     *gpFileNameRAW      = 0; // user over-ride default?
-
-// BEGIN OMP
-    // The single 16-bit brightness buffer is a shared resource
-    // We would incur a major performance penalty via atomic access
-    // to keep it in sync amongst the various threads
-    // Instead, we give each thread its own independent copy
-    // Afterwards, we will merge (add) all copies back into a single brightness buffer
-    int       gnThreadsMaximum = 0 ;
-    int       gnThreadsActive  = 0 ; // 0 = auto detect; > 0 manual # of threads
-    uint16_t *gaThreadsTexels[ 16 ]; // Max 16-cores
-// END OMP
 
 
 // Timer___________________________________________________________________________ 
@@ -659,6 +649,8 @@ int main( int nArg, char * aArg[] )
 {
 // BEGIN OMP
     gnThreadsMaximum = omp_get_num_procs();
+    if( gnThreadsMaximum > MAX_THREADS )
+        gnThreadsMaximum = MAX_THREADS;
 // END OMP
 
     int   iArg = 0;
@@ -715,6 +707,8 @@ int main( int nArg, char * aArg[] )
                     int i = atoi( pArg+1 ); 
                     if( i > 0 )
                         gnThreadsActive = i;
+                    if( gnThreadsActive > MAX_THREADS )
+                        gnThreadsActive = MAX_THREADS;
                 }
                 else
 // END OMP

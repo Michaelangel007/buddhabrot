@@ -24,6 +24,7 @@
     #include <string.h> // memset()
 // BEGIN C++11
     #include <thread>
+    #include "util_threads.h"
 // END C++11
 
 #ifdef _MSC_VER
@@ -74,17 +75,6 @@
     char     *gpFileNameBMP      = 0; // user over-ride default?
     char     *gpFileNameRAW      = 0; // user over-ride default?
 
-// BEGIN OMP
-    // The single 16-bit brightness buffer is a shared resource
-    // We would incur a major performance penalty via atomic access
-    // to keep it in sync amongst the various threads
-    // Instead, we give each thread its own indepent copy
-    // Afterwards, we will merge (add) all copies back into a single brightness buffer
-    int       gnThreadsMaximum = 0 ;
-    int       gnThreadsActive  = 0 ; // 0 = auto detect; > 0 manual # of threads
-    uint16_t *gaThreadsTexels[ 16 ]; // Max 16-cores
-// END OMP
-
 
 // Timer___________________________________________________________________________ 
 
@@ -128,7 +118,18 @@ int main( int nArg, char * aArg[] )
 {
 // BEGIN C++11
     gnThreadsMaximum = std::thread::hardware_concurrency();
+    if( gnThreadsMaximum > MAX_THREADS )
+        gnThreadsMaximum = MAX_THREADS;
 // END C++11
+
+
+printf( "Auto-detect Threads: %u\n", gnThreadsMaximum );
+    if ((gnThreadsMaximum <    1)
+    ||  (gnThreadsMaximum > 1024))
+    {
+        printf( "ERROR: Unable to get maximum number of threads!\n" );
+        return -1;
+    }
 
 // :
 
@@ -137,7 +138,7 @@ int main( int nArg, char * aArg[] )
     AllocImageMemory( gnWidth, gnHeight );
 
 // BEGIN C++11
-    printf( "Using: %d / %d cores\n", gnThreadsActive, gnThreadsMaximum );
+    printf( "Using: %u / %u cores\n", gnThreadsActive, gnThreadsMaximum );
 // END C++11
 
     return 0;
