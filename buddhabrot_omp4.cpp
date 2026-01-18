@@ -113,8 +113,16 @@
     // *sigh* no gettimeofday on Win32/Win64
     int gettimeofday(struct timeval * tp, struct timezone * tzp)
     {
-        // FILETIME Jan 1 1970 00:00:00
+        // Windows tracks time in 100ns since Jan 1, 1601
+        // We want the first available Un*x timestamp or FILETIME Jan 1 1970 00:00:00
         // Note: some broken versions only have 8 trailing zero's, the correct epoch has 9 trailing zero's
+        // Proof:
+        //   Between 01-01-1601 and 01-01-1970 there are exactly 134774 days
+        //   = 134774 days * 24 hours/day * 3,600 seconds/hour * 1,000 ms/second * 1,000,000 ns/ms / 100ns
+        //   = 116444736 * 1,000,000,000
+        // See:
+        //   https://devblogs.microsoft.com/oldnewthing/20220602-00/?p=106706
+        // For C++ use std::chrono::time_point
         static const uint64_t EPOCH = ((uint64_t) 116444736000000000ULL); 
 
         SYSTEMTIME  nSystemTime;
@@ -126,8 +134,11 @@
         nTime =  ((uint64_t)nFileTime.dwLowDateTime )      ;
         nTime += ((uint64_t)nFileTime.dwHighDateTime) << 32;
 
-        tp->tv_sec  = (long) ((nTime - EPOCH) / 10000000L);
-        tp->tv_usec = (long) (nSystemTime.wMilliseconds * 1000);
+        if (tp)
+        {
+            tp->tv_sec  = (long) ((nTime - EPOCH) / 10000000L);
+            tp->tv_usec = (long) (nSystemTime.wMilliseconds * 1000);
+        }
         return 0;
     }
 #else
